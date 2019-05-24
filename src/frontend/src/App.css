@@ -1,0 +1,64 @@
+:root {
+  --color-red-10: #f9c6cd;
+  --color-red-20: #f27a8c;
+  --color-red-30: #ec2f4b;
+  --color-red-40: #811a29;
+  --color-red-50: #160507;
+  --color-blue-10: #b9efff;
+  --color-blue-20: #8fe6ff;
+  --color-blue-30: #66ddff;
+  --color-blue-40: #418da3;
+  --color-blue-50: #13292f;
+  --color-green-10: #d3ffd1;
+  --color-green-20: #b2ffaf;
+  --color-green-30: #86ff82;
+  --color-green-40: #6ed16b;
+  --color-green-50: #254624;
+
+  --color-red: var(--color-red-30);
+  --color-blue: var(--color-blue-30);
+  --color-green: var(--color-green-30);
+}
+
+.btn {
+  padding: 6pt 18pt;
+  min-width: 60pt;
+  font-size: 12pt;
+  border: none;
+  border-radius: 6pt;
+  cursor: pointer;
+  outline: none;
+}
+.btn-primary {
+  background-color: var(--color-blue);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--color-blue-20);
+}
+.btn-create {
+  background-color: var(--color-green-40);
+  color: white;
+}
+.btn-create:hover {
+  background-color: var(--color-green-30);
+}
+.btn-plain {
+  background-color: #dcdcdc;
+  color: white;
+}
+.btn-plain:hover {
+  background-color: #ababab;
+}
+.btn-delete {
+  background-color: var(--color-red-30);
+  color: white;
+}
+.btn-delete:hover {
+  background-color:  var(--color-red-20);
+}
+
+
+.center {
+  text-align: center;
+}

@@ -1,0 +1,10 @@
+version: '2.1'
+
+services:
+  student-performance-tracker-1:
+    image: student-performance-tracker-1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000

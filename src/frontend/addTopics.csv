@@ -1,0 +1,4 @@
+topicname ,arrays,category,Quiz,0.5,parentOf,hashtables,parentOf,linkedlist
+topicname ,hashtables,category,Quiz,0.25,parentOf,hashfunctions,,
+topicname ,linkedlist,category,Quiz,1.3,,,,
+topicname ,Hash functions,category,Quiz,0.25,,,,
