@@ -68,6 +68,55 @@ from .serializers import (
     ClassGraphSerializer
 )
 
+''' true iff the debug user can login (to bypass google auth) '''
+API_DEBUG = True
+DEBUG_TOKEN = '12345'
+
+''' Checks for authentication '''
+''' Returns user data or None if authentication fails '''
+def authenticateUser(token, format=None, pk=None):
+    
+    if API_DEBUG and token == DEBUG_TOKEN:
+        # Set up the user's data
+        data = {
+            'first_name': 'Mark',
+            'last_name': 'Floryan',
+            'email': 'mrf8t@virginia.edu',
+            'id_token': DEBUG_TOKEN,
+            'is_professor': 't'
+        }
+        return data
+
+    else:
+
+        # Call out to google here
+        URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
+        PARAMS = {'id_token': token}
+        r = requests.post(url=URL, params=PARAMS)
+        fullProfile = r.json()
+
+        # If the request from google was bad
+        if(not fullProfile.get('sub')):
+            #return external_error()
+            return None
+
+        # Set up the user's data
+        data = {
+            'first_name': fullProfile.get('given_name'),
+            'last_name': fullProfile.get('family_name'),
+            'email': fullProfile.get('email'),
+            'id_token': token,
+            'is_professor': request.data.get('isProfessor')
+        }
+
+        return data
+
+''' End authenticateUser() '''
+
+
+
+
+
 
 ''' API ENDPOINTS '''
 
@@ -559,11 +608,8 @@ class StudentViewSet(viewsets.ModelViewSet):
 
             if id_token is not None:
                 try:
-                    URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-                    PARAMS = {'id_token': id_token}
-                    r = requests.post(url=URL, params=PARAMS)
-                    fullProfile = r.json()
-                    if(not fullProfile.get('sub')):
+                    fullProfile = authenticateUser(id_token, format, pk)
+                    if(fullProfile is None):
                         return external_error()
                     # student = Student.objects.get(email=fullProfile["email"])
 
@@ -589,30 +635,19 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def post(self, request, format=None, pk=None):
         if pk is None:
-            # Call out to google here
-            URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-            PARAMS = {'id_token': request.data.get('token')}
-            r = requests.post(url=URL, params=PARAMS)
-            fullProfile = r.json()
+            token = request.data.get('token')
+            data = authenticateUser(token, format, pk)
 
-            # If the request from google was bad
-            if(not fullProfile.get('sub')):
+            if data is None:
                 return external_error()
-            # Set up the user's data
-            data = {
-                'first_name': fullProfile.get('given_name'),
-                'last_name': fullProfile.get('family_name'),
-                'email': fullProfile.get('email'),
-                'id_token': request.data.get('token'),
-                'is_professor': request.data.get('isProfessor')
-            }
+
             serializer = self.serializer_class(data=data)
             if not serializer.is_valid():
                 if(serializer.errors['email'][0] == "user with this email already exists."):
                     # If they already have an email and this is the verification, then log them in
                     if(not request.data.get('isCreate')):
                         user = self.model.objects.get(
-                            email=fullProfile.get('email'))
+                            email=data.get('email'))
                         student_queryset = Student.objects.filter(pk=user.pk)
                         student_queryset.update(
                             id_token=request.data.get('token'))
@@ -631,21 +666,7 @@ class StudentViewSet(viewsets.ModelViewSet):
             else:
                 # Create the profile for the account
                 serializer.save()
-
-                # Now we log the user in
-                # user = self.model.objects.get(email=validatedData.get('email'))
-                # user.set_password(fullProfile.get('sub'))
-                # user.save()
-                # user.authenticate(username=fullProfile.get('email'), password=fullProfile.get('sub'))
-                # login(request, user)
-                profile = {
-                    'first_name': fullProfile.get('given_name'),
-                    'last_name': fullProfile.get('family_name'),
-                    'email': fullProfile.get('email'),
-                    'id_token': request.data.get('token'),
-                    'group': request.data.get('isProfessor')
-                }
-                return successful_create_response(profile)
+                return successful_create_response(data)
         else:
             return colliding_id_response()
 
@@ -768,11 +789,9 @@ class SearchViewSet(viewsets.ModelViewSet):
 
         if id_token is not None:
             try:
-                URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-                PARAMS = {'id_token': id_token}
-                r = requests.post(url=URL, params=PARAMS)
-                fullProfile = r.json()
-                if(not fullProfile.get('sub')):
+                fullProfile = authenticateUser(id_token, format, pk)
+
+                if(fullProfile is None):
                     return external_error()
                 student = Student.objects.get(email=fullProfile["email"])
 
@@ -1817,22 +1836,24 @@ class SettingsViewModel(viewsets.ModelViewSet):
 
     def get(self, request, format=None, pk=None):
         id_token = request.GET.get('id_token', None)
+        print("Settings requested. IN get")
 
         if id_token is None:
+            print("Returning object not found")
             return object_not_found_response()
 
-        URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-        PARAMS = {'id_token': request.GET.get('id_token', None)}
-        r = requests.post(url=URL, params=PARAMS)
-        fullProfile = r.json()
+        fullProfile = authenticateUser(id_token, format, pk);
 
-        if(not fullProfile.get('sub')):
+        if(fullProfile is None):
+            print("fullProfile is none")
             return external_error()
         try:
+            print("Email is: " + fullProfile["email"])
             student = Student.objects.get(email=fullProfile["email"])
             result = Settings.objects.get(user=student)
             is_many = False
         except self.model.DoesNotExist:
+            print("Object not found 2")
             return object_not_found_response()
 
         serializer = self.serializer_class(result, many=is_many)
@@ -1845,12 +1866,11 @@ class SettingsViewModel(viewsets.ModelViewSet):
 
     def post(self, request, format=None, pk=None):
         if pk is None:
-            URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-            PARAMS = {'id_token': request.data.get('token')}
-            r = requests.post(url=URL, params=PARAMS)
-            fullProfile = r.json()
+            id_token = request.data.get('token')
 
-            if(not fullProfile.get('sub')):
+            fullProfile = authenticateUser(id_token, format, pk)
+
+            if(fullProfile is None):
                 return external_error()
 
             student = Student.objects.get(email=fullProfile["email"])
@@ -1874,14 +1894,11 @@ class SettingsViewModel(viewsets.ModelViewSet):
 
     def put(self, request, format=None, pk=None):
 
-        URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-        PARAMS = {'id_token': request.data.get('token')}
-        r = requests.post(url=URL, params=PARAMS)
-        fullProfile = r.json()
+        id_token = request.data.get('token')
 
-        # If the request from google was bad
+        fullProfile = authenticateUser(id_token, format, pk)
 
-        if(not fullProfile.get('sub')):
+        if(fullProfile is None):
             return external_error()
 
         try:
@@ -1945,13 +1962,12 @@ class StudentToQuizViewSet(viewsets.ModelViewSet):
         else:
             is_many = False
             result = {}
-            # TODO: Extract student id from auth token
-            URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-            PARAMS = {'id_token': request.GET.get('id_token', None)}
-            r = requests.post(url=URL, params=PARAMS)
-            fullProfile = r.json()
 
-            if(not fullProfile.get('sub')):
+            id_token = request.GET.get('id_token', None)
+            # TODO: Extract student id from auth token
+            fullProfile = authenticateUser(id_token, format, pk)
+
+            if(fullProfile is None):
                 return external_error()
 
             user = Student.objects.get(email=fullProfile["email"])
@@ -1991,13 +2007,12 @@ class StudentToQuizViewSet(viewsets.ModelViewSet):
 
     def post(self, request, format=None, pk=None):
         if pk is not None:
-            # DONE: Extract student id from auth token
-            URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-            PARAMS = {'id_token': request.data.get('id_token', None)}
-            r = requests.post(url=URL, params=PARAMS)
-            fullProfile = r.json()
 
-            if(not fullProfile.get('sub')):
+            id_token = request.data.get('id_token', None)
+
+            fullProfile = authenticateUser(id_token, format, pk)
+
+            if(fullProfile is None):
                 return external_error()
 
             student = Student.objects.get(email=fullProfile["email"])
@@ -2180,12 +2195,9 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
             if course_id is not None and id_token is not None:
                 try:
                     # Try to parse the id token
-                    URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-                    PARAMS = {'id_token': id_token}
-                    r = requests.post(url=URL, params=PARAMS)
-                    fullProfile = r.json()
+                    fullProfile = authenticateUser(id_token, format, pk)
 
-                    if(not fullProfile.get('sub')):
+                    if(fullProfile is None):
                         return external_error()
 
                     user = Student.objects.get(email=fullProfile["email"])
@@ -2230,12 +2242,9 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
                 )
             else:
                 # Try to parse the id token
-                URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-                PARAMS = {'id_token': request.GET.get('id_token', None)}
-                r = requests.post(url=URL, params=PARAMS)
-                fullProfile = r.json()
+                fullProfile = authenticateUser(id_token, format, pk)
 
-                if(not fullProfile.get('sub')):
+                if(fullProfile is None):
                     return external_error()
 
                 student = Student.objects.get(email=fullProfile["email"])
@@ -2275,12 +2284,9 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
             id_token = request.data.get('id_token', None)
 
             if id_token is not None:
-                URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-                PARAMS = {'id_token': id_token}
-                r = requests.post(url=URL, params=PARAMS)
-                fullProfile = r.json()
+                fullProfile = authenticateUser(id_token, format, pk)
 
-                if(not fullProfile.get('sub')):
+                if(fullProfile is None):
                     return external_error()
 
             if len(missing_fields.keys()) > 0 and id_token is None:

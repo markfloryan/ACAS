@@ -36,7 +36,7 @@ services:
     volumes:
       - ./frontend:/app
     ports:
-      - '8080:5000'
+      - '80:5000'
     command: >
       bash -c "cd ./app
       && npm install

@@ -32,7 +32,7 @@ SECRET_KEY = '4-bjy!q0#^l6b86n1oz)*x29ucb2_r8@86zb7%9g-p#e1g+%=c'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.1.1.174', '128.143.71.210', 'localhost']
+ALLOWED_HOSTS = ['10.1.1.174', '128.143.71.210', 'localhost', 'hotcake.cs.virginia.edu']
 
 
 # Application definition

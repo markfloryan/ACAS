@@ -28,6 +28,10 @@
       <div v-if="!isSignUp" id="googleSignInButton" class="g-signin-button" @click="signIn">
         <p>Sign In</p>
       </div>
+      <!-- Debug Sign in -->
+      <div v-if="!isSignUp" id="debugSignIn" class="g-signin-button" @click="debugSignIn">
+        <p>Debug Sign In</p>
+      </div>
       <!-- Sign Up -->
       <div v-if="isSignUp" id="studentButton" class="g-signin-button" @click="signUp(false)">
         <p>Student Sign Up</p>
@@ -90,7 +94,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('auth', ['signIn', 'signUp']),
+    ...mapActions('auth', ['signIn', 'signUp', 'debugSignIn']),
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     navigateSignUp() {
       //sets url to signup

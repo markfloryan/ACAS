@@ -2,6 +2,8 @@ import api from '../../api';
 import store from '../index';
 import axios from 'axios';
 import { API_URL } from '@/constants/';
+import { IN_PROD } from '@/constants/';
+import { DEBUG_TOKEN } from '@/constants/';
 
 const state = {
   signedIn: false,
@@ -77,7 +79,7 @@ const actions = {
                   // Retrieve their settings
                   axios
                     .post(`${API_URL}/settings/`, data)
-                    .then(repsonse => {
+                    .then(response => {
                       console.log('CREATED SETTINGS');
                     })
                     .catch(response => {
@@ -126,6 +128,37 @@ const actions = {
       });
     });
   },
+
+  // backdoor Sign in for floryan
+  debugSignIn({ dispatch, commit }) {
+    console.log('backdoor signing in...');
+    return new Promise((resolve, reject) => {
+      // verify token with a backend server (identify user)
+      dispatch('verifyToken')
+        .then(profile => {
+          // Gather settings
+          axios
+            .get(`${API_URL}/settings/?id_token=${profile.id_token}`)
+            .then(response => {
+              const settings = response.data.result;
+              commit('settings/colorChange', settings.color, {
+                root: true,
+              });
+              console.log("Completing signIn");
+              commit('signIn', profile);
+              resolve();
+            })
+            .catch(response => {});
+        })
+        .catch(err => {
+          console.log(err);
+          dispatch('signOut').then(() => {
+            reject();
+          });
+        });
+    });
+  },
+
   // Sign in a user
   signIn({ dispatch, commit }) {
     console.log('signing in...');
@@ -220,7 +253,7 @@ const actions = {
                 store.commit('toast/openToast', true);
                 store.commit('toast/setToastInfo', {
                   type: 'error',
-                  title: 'User does not exit',
+                  title: 'User does not exist',
                 });
               }
               if (err.response.status == 400) {
@@ -274,7 +307,7 @@ const actions = {
                 store.commit('toast/openToast', true);
                 store.commit('toast/setToastInfo', {
                   type: 'error',
-                  title: 'User does not exit',
+                  title: 'User does not exist',
                 });
               }
               if (err.response.status == 400) {
@@ -300,24 +333,44 @@ const actions = {
   // server and receives the user profile as response
   verifyToken({ commit }) {
     console.log('verifying token and user...');
+
     return new Promise((resolve, reject) => {
+
       var token = null;
-      try {
-        token = gapi.auth2
-          .getAuthInstance()
-          .currentUser.get()
-          .getAuthResponse().id_token;
-      } catch (e) {
+      var reject = false;
+      if(!IN_PROD){
+        console.log("Setting token to debug value");
+        token = DEBUG_TOKEN;
+      }
+      else{
+        console.log("Verifying through google (verifyToken)");
+        try {
+          token = gapi.auth2
+            .getAuthInstance()
+            .currentUser.get()
+            .getAuthResponse().id_token;
+        } catch (e) {
+          console.log("Caught: Setting reject to true");
+          reject = true;;
+        }
+        if (!token) {
+          console.log("token is null, setting reject to true");
+          reject = true;
+        } 
+      }
+
+      /* This is where the verification is taking place */
+      // This is checking to see if they have an account, and if they do then seeing if they can login
+      if(reject){
+        console.log("reject is true in verifyToken");
         reject();
       }
-      if (!token) {
-        reject();
-      } else {
-        /* This is where the verification is taking place */
-        // This is checking to see if they have an account, and if they do then seeing if they can login
+      else{
         api
           .createUser(token, false)
           .then(res => {
+            console.log("Got profile back 2: ");
+            console.log(res.data.result);
             resolve(res.data.result);
           })
           .catch(err => {
@@ -327,7 +380,7 @@ const actions = {
                 store.commit('toast/openToast', true);
                 store.commit('toast/setToastInfo', {
                   type: 'error',
-                  title: 'User does not exit',
+                  title: 'User does not exist',
                 });
               }
               if (err.response.status == 400) {
@@ -353,6 +406,7 @@ const actions = {
 
 const mutations = {
   signIn(state, profile) {
+    
     state.signedIn = true;
     if (profile) {
       state.profile = profile;
