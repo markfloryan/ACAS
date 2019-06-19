@@ -70,20 +70,32 @@ from .serializers import (
 
 ''' true iff the debug user can login (to bypass google auth) '''
 API_DEBUG = True
-DEBUG_TOKEN = '12345'
+PROF_DEBUG_TOKEN = '12345'
+STUD_DEBUG_TOKEN = '54321'
 
 ''' Checks for authentication '''
 ''' Returns user data or None if authentication fails '''
 def authenticateUser(token, format=None, pk=None):
     
-    if API_DEBUG and token == DEBUG_TOKEN:
+    if API_DEBUG and token == PROF_DEBUG_TOKEN:
         # Set up the user's data
         data = {
             'first_name': 'Mark',
             'last_name': 'Floryan',
             'email': 'mrf8t@virginia.edu',
-            'id_token': DEBUG_TOKEN,
+            'id_token': PROF_DEBUG_TOKEN,
             'is_professor': 't'
+        }
+        return data
+
+    elif API_DEBUG and token == STUD_DEBUG_TOKEN:
+        
+        data = {
+            'first_name': 'Jonny',
+            'last_name': 'Studential',
+            'email': 'js@virginia.edu',
+            'id_token': STUD_DEBUG_TOKEN,
+            'is_professor': 'f'
         }
         return data
 
@@ -142,16 +154,17 @@ class CourseViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
-        if pk is None:
-            return missing_id_response()
-        else:
-            try:
-                result = self.model.objects.get(pk=pk)
-                result.delete()
-            except self.model.DoesNotExist:
-                return object_not_found_response()
+        # if pk is None:
+        #     return missing_id_response()
+        # else:
+        #     try:
+        #         result = self.model.objects.get(pk=pk)
+        #         result.delete()
+        #     except self.model.DoesNotExist:
+        #         return object_not_found_response()
 
-            return successful_delete_response()
+        #Don't allow courses to be deleted right now
+        return successful_delete_response()
 
     '''
     __________________________________________________  get
@@ -162,17 +175,46 @@ class CourseViewSet(viewsets.ModelViewSet):
     '''
 
     def get(self, request, format=None, pk=None):
-        is_many = True
-        if pk is None:
-            result = self.model.objects.all()
-        else:
+
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        try:
+            userObj = Student.objects.get(id_token=token)
+        except Student.DoesNotExist:
+            return object_not_found_response();
+
+        #grab that user's primary key
+        userId = userObj.pk;
+
+        #get the courses associated with that student
+        courses = Course.objects.filter(courses__student__pk=userId)
+        
+        #handle case where user is requesting one specific course
+        if pk is not None:
             try:
-                result = self.model.objects.get(pk=pk)
-                is_many = False
+                course = courses.get(pk=pk)
+                serializer = self.serializer_class(course, many=False)
+                #if not serializer.is_valid():
+                #    return invalid_serializer_response(serializer.errors)
+
             except self.model.DoesNotExist:
                 return object_not_found_response()
+        else:
+            #otherwise just return all courses associated with this user
+            serializer = self.serializer_class(courses, many=True)
+            #if not serializer.is_valid():
+            #   return invalid_serializer_response(serializer.errors)
 
-        serializer = self.serializer_class(result, many=is_many)
         return successful_create_response(serializer.data)
 
     '''
@@ -183,6 +225,23 @@ class CourseViewSet(viewsets.ModelViewSet):
     '''
 
     def post(self, request, format=None, pk=None):
+
+        token = request.data.get('token', None)
+        
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Only professors can create courses
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             serializer = self.serializer_class(data=request.data)
             if not serializer.is_valid():
@@ -203,19 +262,35 @@ class CourseViewSet(viewsets.ModelViewSet):
     def put(self, request, format=None, pk=None):
         if pk is None:
             return missing_id_response()
-        else:
-            try:
-                result = self.model.objects.get(pk=pk)
-            except self.model.DoesNotExist:
-                return object_not_found_response()
+        
+        token = request.data.get('token', None)
+        
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
 
-            serializer = self.serializer_class(result, data=request.data)
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
 
-            if not serializer.is_valid():
-                return invalid_serializer_response(serializer.errors)
+        # Only professors can create courses
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
 
-            serializer.save()
-            return successful_edit_response(serializer.data)
+        try:
+            result = self.model.objects.get(pk=pk)
+        except self.model.DoesNotExist:
+            return object_not_found_response()
+
+        serializer = self.serializer_class(result, data=request.data)
+
+        if not serializer.is_valid():
+            return invalid_serializer_response(serializer.errors)
+
+        serializer.save()
+        return successful_edit_response(serializer.data)
 
 
 '''
@@ -1040,8 +1115,8 @@ class TopicToTopicViewSet(viewsets.ModelViewSet):
         if pk is None:
             for topictotopic in request.data:
                 serializer = self.serializer_class(data=topictotopic)
-                # print("topictotopic")
-                # print(topictotopic)
+                print("topictotopic")
+                print(topictotopic)
 
                 if not serializer.is_valid():
                     return invalid_serializer_response(serializer.errors)

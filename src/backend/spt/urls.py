@@ -71,10 +71,11 @@ urlpatterns = [
 
     # API
     url(r'^api/courses/(?P<pk>[0-9]+)', course_list, name='course-detail'),
+    url(r'^api/courses/', course_list, name='course-list'),
+
     url(r'^api/courses/(?P<pk>[0-9]+)/graph-data', api_views.CourseViewSet.as_view(
         {"get": "graph_data"}
     ), name='course-graph-data'),
-    url(r'^api/courses/', course_list, name='course-list'),
 
     url(r'^api/search/', search_list, name='search-detail'),
     url(r'^api/students/(?P<pk>[0-9]+)', student_list, name='student-detail'),

@@ -25,9 +25,11 @@
             Create Class
           </button>
         </router-link>
+          <!--
           <button v-if="!deleting" class="create-class btn btn-delete" style="height:15%;width:100%;margin-top:5px;" @click="deleteSwitch()"> 
             Delete Class
           </button>
+          -->
            <button v-if="deleting" class="create-class btn btn-create" style="height:15%;width:100%;margin-top:5px;" @click="deleteClass()"> 
             Submit
           </button>

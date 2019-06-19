@@ -3,6 +3,11 @@ from rest_framework.response import Response
 
 # ERROR Response
 
+def unauthorized_access_response():
+    return Response({
+        'status': '400 - Bad Request',
+        'result': 'You are either not logged in or not authorized to view this content'
+    }, status=status.HTTP_400_BAD_REQUEST)
 
 def missing_id_response():
     return Response({

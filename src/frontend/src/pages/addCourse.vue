@@ -126,6 +126,7 @@ export default {
           const professor_id = res.data.result.pk;
 
           let courseData = {
+            token: this.profile.id_token,
             pk: 'None',
             name: this.courseName,
             course_code: this.courseCode,

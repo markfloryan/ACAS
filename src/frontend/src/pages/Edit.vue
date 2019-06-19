@@ -60,7 +60,7 @@ export default {
           .then(studentTopicData => {
             // Get all the data needed about the rest of the class
             axios
-              .get(`${API_URL}/courses/${this.id}`)
+              .get(`${API_URL}/courses/${this.id}/?id_token=${this.profile.id_token}`)
               .then(data => {
                 this.classNotFound = false;
                 if (data && data.data && data.data.result) {

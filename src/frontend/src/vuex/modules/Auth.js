@@ -130,11 +130,11 @@ const actions = {
   },
 
   // backdoor Sign in for floryan
-  debugSignIn({ dispatch, commit }) {
+  debugProfSignIn({ dispatch, commit }) {
     console.log('backdoor signing in...');
     return new Promise((resolve, reject) => {
       // verify token with a backend server (identify user)
-      dispatch('verifyToken')
+      dispatch('verifyToken', '12345')
         .then(profile => {
           // Gather settings
           axios
@@ -144,7 +144,37 @@ const actions = {
               commit('settings/colorChange', settings.color, {
                 root: true,
               });
-              console.log("Completing signIn");
+              console.log('Completing signIn');
+              commit('signIn', profile);
+              resolve();
+            })
+            .catch(response => {});
+        })
+        .catch(err => {
+          console.log(err);
+          dispatch('signOut').then(() => {
+            reject();
+          });
+        });
+    });
+  },
+
+  // backdoor Sign in for dummy student
+  debugStudSignIn({ dispatch, commit }) {
+    console.log('backdoor signing in...');
+    return new Promise((resolve, reject) => {
+      // verify token with a backend server (identify user)
+      dispatch('verifyToken', '54321')
+        .then(profile => {
+          // Gather settings
+          axios
+            .get(`${API_URL}/settings/?id_token=${profile.id_token}`)
+            .then(response => {
+              const settings = response.data.result;
+              commit('settings/colorChange', settings.color, {
+                root: true,
+              });
+              console.log('Completing signIn');
               commit('signIn', profile);
               resolve();
             })
@@ -331,30 +361,23 @@ const actions = {
   },
   // This action verifies the id_token parameter with a backend
   // server and receives the user profile as response
-  verifyToken({ commit }) {
+  verifyToken({ commit }, token=null) {
     console.log('verifying token and user...');
 
     return new Promise((resolve, reject) => {
 
-      var token = null;
       var reject = false;
-      if(!IN_PROD){
-        console.log("Setting token to debug value");
-        token = DEBUG_TOKEN;
-      }
-      else{
-        console.log("Verifying through google (verifyToken)");
+      if(IN_PROD){
+        console.log('Verifying through google (verifyToken)');
         try {
           token = gapi.auth2
             .getAuthInstance()
             .currentUser.get()
             .getAuthResponse().id_token;
         } catch (e) {
-          console.log("Caught: Setting reject to true");
           reject = true;;
         }
         if (!token) {
-          console.log("token is null, setting reject to true");
           reject = true;
         } 
       }
@@ -362,15 +385,12 @@ const actions = {
       /* This is where the verification is taking place */
       // This is checking to see if they have an account, and if they do then seeing if they can login
       if(reject){
-        console.log("reject is true in verifyToken");
         reject();
       }
       else{
         api
           .createUser(token, false)
           .then(res => {
-            console.log("Got profile back 2: ");
-            console.log(res.data.result);
             resolve(res.data.result);
           })
           .catch(err => {

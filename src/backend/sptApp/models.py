@@ -181,7 +181,7 @@ ________________________________________________________________________________
 
 class Topic(models.Model):
     name = models.CharField(max_length=250)
-    course = models.ForeignKey(Course,  on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name='topics',  on_delete=models.CASCADE)
     ancestor_weight = models.FloatField(
         null=True,
         blank=True,

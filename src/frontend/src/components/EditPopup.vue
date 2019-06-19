@@ -68,11 +68,12 @@ export default {
       if(this.aexist === false){
         const SVG = generate_svg();
         let nodeImage;
+        this.tid += 'a';
         let node = {'course':this.classData,'grade':0,'id':this.tid,'locked':false,'student':{},'topic':{'course':this.classData.uuid,'id':'None','name':this.tname}};
         nodeImage = generate_svg(SVG, node.topic.name, node.grade, node.locked);
         node.shape = 'image';
         node.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(nodeImage);
-        this.tid += 'a';
+        
         this.nodes.push(node);
         this.tname = '';
         this.$emit('onClose');

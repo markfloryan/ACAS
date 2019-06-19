@@ -96,7 +96,8 @@ class StudentToTopicSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    nodes = StudentToTopicSerializer(many=True, read_only=True)
+    topics = TopicSerializer(many=True, read_only=True)
+    #nodes = StudentToTopicSerializer(many=True, read_only=True)
     edges = TopicToTopicSerializer(many=True, read_only=True)
 
     class Meta:
@@ -106,7 +107,7 @@ class CourseSerializer(serializers.ModelSerializer):
             'name',
             'course_code',
             'subject_code',
-            'nodes',
+            'topics',
             'edges',
             'professor'
         )

@@ -744,6 +744,8 @@ export default {
             edgyPost.push(topicToTopic);
           });
           //Posts edges to DB
+          console.log("edgyPost");
+          console.log(edgyPost)
           axios
             .post(`${API_URL}/topic/topics/`, edgyPost)
             .then(data => {
@@ -778,7 +780,7 @@ export default {
         console.log('edges?', this.nodes);
         // this.nEdges = nEdges;
 
-        //converts bullshit edge storage object to JSON string then manually parse to usable form
+        //converts edge storage object to JSON string then manually parse to usable form
         let parse = JSON.stringify(nEdges);
         console.log('nedges' ,JSON.stringify(nEdges));
         parse = parse.substring(1, parse.length - 2);
@@ -789,13 +791,17 @@ export default {
           g = g.split(',');
           if (g.length > 2) {
             let from = g[0].split(':')[1];
+            if (typeof from == "string" && from.charAt(0) === '"' && from.charAt(from.length -1) === '"')
+            {
+                from = from.substr(1,from.length -2);
+            }
+
             let to = g[1].split(':')[1];
-            if(to.length>1){
-              to = to.substr(1, to.length - 2);
+            if (typeof to == "string" && to.charAt(0) === '"' && to.charAt(to.length -1) === '"')
+            {
+                to = to.substr(1,to.length -2);
             }
-            if(from.length>1){
-              from = from.substr(1, from.length - 2);
-            }
+            
             let id = g[2].split(':')[1];
             id = id.substring(1, id.length - 1);
             let ed = { from: from, to: to, id: id };
@@ -881,6 +887,9 @@ export default {
                           this.Errors.push('Can\'t make topic ',newSTT, ' for ',this.profile.email);
                         });
 
+                      //fix newEdges objects that have extra quotations around the id
+                      //<TODO>
+
                       //Map edge temp ids to pks
                       newEdges.forEach(edge => {
                         let top = edge['to'];
@@ -897,6 +906,8 @@ export default {
                         }
                       });
 
+                      console.log("edgyPost");
+                      console.log(edgyPost)
                       // Actually Post edges
                       axios
                         .post(`${API_URL}/topic/topics/`, edgyPost)
@@ -947,11 +958,12 @@ export default {
     createTopic(event) {
       const SVG = generate_svg();
       let nodeImage;
+      this.tid += 'a';
       let node = {'course':this.classData,'grade':0,'id':this.tid,'locked':false,'student':{},'topic':{'course':this.classData.uuid,'id':'None','name':this.tname}};
       nodeImage = generate_svg(SVG, node.topic.name, node.grade, node.locked);
       node.shape = 'image';
       node.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(nodeImage);
-      this.tid += 'a';
+      
       this.nodes.push(node);
       this.tname = '';
       this.$emit('onClose');
