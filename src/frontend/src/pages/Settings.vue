@@ -587,7 +587,7 @@ export default {
       let site_index = document.getElementById('deleteExternalGrades-site').value;
       let externalSiteToCourse_pk = this.deleteGrade.sites[site_index].externalSiteToCourse_pk;
 
-      await axios.delete(`${API_URL}/external_import_grades/${externalSiteToCourse_pk}?id=${profile.auth.profile.id_token}`)
+      await axios.delete(`${API_URL}/external_import_grades/${externalSiteToCourse_pk}?id_token=${profile.auth.profile.id_token}`)
         .then((response)=> {
           let externalSitesToCourse = response.data.result;
 

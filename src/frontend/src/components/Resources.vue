@@ -129,7 +129,9 @@ export default {
     },
 
     removeResource(n) {
-      axios.delete(`${API_URL}/resources/${this.resources[n].pk}`)
+      const profile = JSON.parse(localStorage.getItem('profile'));
+
+      axios.delete(`${API_URL}/resources/${this.resources[n].pk}/?id_token=${profile.auth.profile.id_token}`)
         .then((response) => {      
           this.openToast();
           this.setToastInfo({

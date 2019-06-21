@@ -203,7 +203,7 @@ export default {
         .delete(
           `${API_URL}/student/course/${student.value}?courseId=${parseInt(
             this.courseId
-          )}`
+          )}&id_token=${this.profile.id_token}`
         )
         .then(response => {})
         .catch(error => {})

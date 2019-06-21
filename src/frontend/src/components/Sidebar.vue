@@ -120,7 +120,7 @@ export default {
     // requests a delete on a course
     actuallyDelete(id){
 
-      axios.delete(`${API_URL}/courses/${id}`)
+      axios.delete(`${API_URL}/courses/${id}/?id_token=${this.profile.id_token}`)
         .then((response) => {      
           this.openToast();
           this.setToastInfo({

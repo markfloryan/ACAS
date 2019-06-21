@@ -5,12 +5,12 @@ Third, if the grades array is greater than 0 then it displays all the grades for
 This is an extremely important to the client to display grades in the topic modal -->
 <template>
   <div class="main" v-if="this.loaded">
-    <div v-if="role === 'professor'">
+    <div>
       <div v-for="(student,n) in students" :key="`${student.text}-${n}-tab`">
         <!-- Student Name -->
         <h2>{{ student.text }}</h2>
         <!-- If there are no grades for a student -->
-        <div v-if="grades[n].grades.length === 0">
+        <div v-if="grades[student.value].grades.length === 0">
           <p>{{ readingtext }}</p>
         </div>
         <!-- Otherwise display the table -->
@@ -23,57 +23,22 @@ This is an extremely important to the client to display grades in the topic moda
                 <sui-table-header-cell :width="2" text-align="right">Grade</sui-table-header-cell>
                 <sui-table-header-cell :width="4" text-align="right">Weight</sui-table-header-cell>
                 <sui-table-header-cell :width="4" text-align="right">Weighted Grade</sui-table-header-cell>
-                <sui-table-header-cell :width="2">Actions</sui-table-header-cell>
               </sui-table-row>
             </sui-table-header>
             <sui-table-body>
               <sui-table-row
-                v-for="(grades,i) in grades[n].grades"
-                :key="`${grades.value}-${i}-tab`"
+                v-for="(grade,i) in grades[student.value].grades"
+                :key="`${student.text}-${i}-tab`"
               >
-                <sui-table-cell>{{ grades.name }}</sui-table-cell>
-                <sui-table-cell>{{ grades.category.name }}</sui-table-cell>
-                <sui-table-cell text-align="right">{{ grades.value }}</sui-table-cell>
-                <sui-table-cell text-align="right">{{ grades.weight }}</sui-table-cell>
-                <sui-table-cell text-align="right">{{ grades.value*grades.weight }}</sui-table-cell>
-                <sui-table-cell>
-                  <button @click="removeGrade(n,i)">Remove</button>
-                </sui-table-cell>
+                <sui-table-cell>{{ grade.name }}</sui-table-cell>
+                <sui-table-cell>{{ grade.category.name }}</sui-table-cell>
+                <sui-table-cell text-align="right">{{ grade.value }}</sui-table-cell>
+                <sui-table-cell text-align="right">{{ grade.weight }}</sui-table-cell>
+                <sui-table-cell text-align="right">{{ grade.value*grade.weight }}</sui-table-cell>
               </sui-table-row>
             </sui-table-body>
           </sui-table>
         </div>
-      </div>
-    </div>
-    <div v-if="role === 'student'">
-      <p>Your grade is {{ this.data.topic.ancestor_weight * 100 }}% based on previous topics</p>
-      <div v-if="student_grade.length === 0">
-        <p>{{ readingtext }}</p>
-      </div>
-      <div v-else>
-        <sui-table celled>
-          <sui-table-header>
-            <sui-table-row>
-              <sui-table-header-cell :width="12">Name</sui-table-header-cell>
-              <sui-table-header-cell :width="2">Category</sui-table-header-cell>
-              <sui-table-header-cell :width="4" text-align="right">Grade</sui-table-header-cell>
-              <sui-table-header-cell :width="4" text-align="right">Weight</sui-table-header-cell>
-              <sui-table-header-cell :width="4" text-align="right">Weighted Grade</sui-table-header-cell>
-            </sui-table-row>
-          </sui-table-header>
-          <sui-table-body>
-            <sui-table-row
-              v-for="(student_grade,n) in student_grade"
-              :key="`${student_grade.value}-${n}-tab`"
-            >
-              <sui-table-cell>{{ student_grade.name }}</sui-table-cell>
-              <sui-table-cell>{{ student_grade.category.name }}</sui-table-cell>
-              <sui-table-cell text-align="right">{{ student_grade.value }}</sui-table-cell>
-              <sui-table-cell text-align="right">{{ student_grade.weight }}</sui-table-cell>
-              <sui-table-cell text-align="right">{{ student_grade.value*student_grade.weight }}</sui-table-cell>
-            </sui-table-row>
-          </sui-table-body>
-        </sui-table>
       </div>
     </div>
   </div>
@@ -104,21 +69,19 @@ export default {
   //the HTML above. This is important to do so data does not get lost
   data() {
     return {
-      grades: [],
-      student_grade: [],
+      grades: {},
       newResource: {
         name: '',
         link: '',
       },
-      readingtext: '',
+      readingtext: 'Retrieving grades...',
       students: [],
       loaded: false,
     };
   },
   mounted() {},
   created() {
-    this.getAllStudentsInTopic();
-    this.retrieveStudentPK();
+    this.retrieveGrades();
   },
 
   //retrieveStudentPK collects the profile by using the profiles id token
@@ -139,126 +102,87 @@ export default {
       const student = this.students[i];
       const grade = this.grades[i].grades[n];
 
+      const profile = JSON.parse(localStorage.getItem('profile'));
+
       axios
-        .delete(`${API_URL}/grades/?gradeId=${grade.pk}`)
+        .delete(`${API_URL}/grades/?gradeId=${grade.pk}/?id_token=${profile.auth.profile.id_token}`)
         .then(res => {
           // Need to refresh the page
           this.students = [];
-          this.grades = [];
+          this.grades = {};
           this.getAllStudentsInTopic();
         })
         .catch(error => {
           console.log(error);
         });
     },
-    getAllStudentsInTopic() {
-      // console.log(this.data);
+    //hit api endpoint to retrieve grades
+    retrieveGrades() {
+      
+      const profile = JSON.parse(localStorage.getItem('profile'));
+
+      //Grab the students first
       axios
         .get(
-          `${API_URL}/students_in_topic/${this.data.course.id}/${
-            this.data.topic.id
-          }/`
+          `${API_URL}/coursetopictostudent/${this.data.course.id}/${this.data.topic.id}/?id_token=${profile.auth.profile.id_token}`
         )
-        .then(student => {
-          // console.log(student);
-          // Save the students
-          this.students = student.data;
+        .then(studentResponse => {
+
+          //Save students in the array and sort it
+          this.students = studentResponse.data;
           this.students.sort((a, b) =>
             a.value > b.value ? 1 : b.value > a.value ? -1 : 0
           );
-          // console.log(this.students);
+
           this.students.forEach((student, n) => {
-            console.log(student.text + ' ' + student.value);
-            axios
-              .get(`${API_URL}/grades/${student.value}/${this.topicId}`)
-              .then(response => {
-                // console.log(student.value);
-                let temp_grades = [];
-                temp_grades = response.data.result;
-                // console.log(temp_grades);
-                if (temp_grades.length === 0) {
-                  this.readingtext = 'We could not find any grades';
-                }
-                this.grades.push({
-                  grades: temp_grades,
-                  student: student.value,
-                });
-                this.grades.sort((a, b) =>
-                  a.student > b.student ? 1 : b.student > a.student ? -1 : 0
-                );
-              })
-              .catch(error => {
-                this.openToast();
-                this.setToastInfo({
-                  type: 'error',
-                  title: 'Could not retrieve grades!',
-                  message: 'Error on our end. Please try again later!',
-                  duration: 6000,
-                });
-              })
-              .finally(() => {});
+            
+            //initialize each student with an empty list of grades
+            this.grades[student.value] = 
+              {
+                grades: [],
+                student: student.value,
+              };
           });
 
-          console.log(this.grades);
-          this.loaded = true;
-        })
-        .catch(function(error) {
-          console.log(error);
+          axios
+            .get(`${API_URL}/grades/${this.data.course.id}/${this.topicId}/?id_token=${profile.auth.profile.id_token}`)
+            .then(gradesResponse => {
+
+              var allGrades = gradesResponse.data.result;
+              allGrades.forEach((grade,n) => {
+
+                this.grades[grade.student].grades.push(grade);
+              });
+
+            })
+            .catch(error => {
+              console.log(error);
+              this.openToast();
+              this.setToastInfo({
+                type: 'error',
+                title: 'Could not retrieve grades!',
+                message: 'Error on our end. Please try again later!',
+                duration: 6000,
+              });
+            })
+            .finally(() => {
+              this.loaded=true;
+
+            });
+      })
+      .catch(error => {
+        console.log(error);
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Could not retrieve grades!',
+          message: 'Error on our end. Please try again later!',
+          duration: 6000,
         });
-    },
-    retrieveStudentPK() {
-      let primarykey;
-      const profile = JSON.parse(localStorage.getItem('profile'));
-      axios
-        .get(`${API_URL}/students/?id_token=${profile.auth.profile.id_token}`)
-        .then(response => {
-          console.log(response.data.result.pk);
-          primarykey = response.data.result.pk;
-          this.retrieveGrades(primarykey);
-        });
-    },
-    //hit api endpoint to retrieve grades
-    retrieveGrades(studentPK) {
-      let viewAs = '';
-      if (this.$route.query && this.$route.query.viewAs) {
-        viewAs = this.$route.query.viewAs;
-      }
-      axios
-        .get(`${API_URL}/grades/${studentPK}/${this.topicId}?view_as=${viewAs}`)
-        .then(response => {
-          // console.log(response.data.result);
-          this.student_grade = response.data.result;
-          if (this.student_grade.length === 0) {
-            this.readingtext = 'We could not find any grades';
-          }
-        })
-        .catch(error => {
-          this.openToast();
-          this.setToastInfo({
-            type: 'error',
-            title: 'Could not retrieve grades!',
-            message: 'Error on our end. Please try again later!',
-            duration: 6000,
-          });
-        })
-        .finally(() => {});
-    },
-    getStudentNameByPK(studentPK, index) {
-      axios
-        .get(`${API_URL}/students/${studentPK}/`)
-        .then(response => {
-          console.log(response.data.result);
-          const student = response.data.result;
-          const name = student.first_name + ' ' + student.last_name;
-          this.grades[index].student = name;
-          console.log(this.grades[index]);
-        })
-        .catch(err => {
-          console.log(err);
-        })
-        .finally(() => {
-          return 'test';
-        });
+      })
+      .finally(() => {
+        
+      });
     },
   },
 };

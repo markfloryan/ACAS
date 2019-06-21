@@ -173,13 +173,18 @@ export default {
           duration: 6000,
         });
       } else {
+
+        const profile = JSON.parse(localStorage.getItem('profile'));
         // Create post object
         const gradeData = {
+          token: profile.auth.profile.id_token,
           topic_to_category: this.newTopicToCategory.category,
           value: this.newTopicToCategory.weight,
           student: this.newTopicToCategory.student,
           name: this.newTopicToCategory.description,
         };
+
+
 
         // Post and create
         axios
@@ -213,9 +218,11 @@ export default {
           this.topicToCategory = categories.data.result;
           console.log(this.topicToCategory);
 
+          const profile = JSON.parse(localStorage.getItem('profile'));
+
           // Delete the resource
           axios
-            .delete(`${API_URL}/topic/category/${this.topicToCategory[n].pk}/`)
+            .delete(`${API_URL}/topic/category/${this.topicToCategory[n].pk}/?id_token=${profile.auth.profile.id_token}`)
             .then(function(response) {
               console.log(response);
             })

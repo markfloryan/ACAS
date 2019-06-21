@@ -214,7 +214,7 @@ export default {
             //if node has been saved before i.e. has a number id or saved id, delete from database
             if (Number.isInteger(pk) | (pk == 'saved')) {
               axios
-                .delete(`${API_URL}/topics/${pk}`)
+                .delete(`${API_URL}/topics/${pk}/?id_token=${this.profile.id_token}`)
                 .then(data => {
                   //on success print delete
                   console.log('deleted');
@@ -491,6 +491,8 @@ export default {
       this.uploading=true;
       this.overlay();
       this.file=this.$refs.file.files[0];
+
+
       const reader = new FileReader();
       reader.onload = event => console.log(event.target.result); // desired file content
       reader.onerror = error => reject(error);
@@ -625,6 +627,7 @@ export default {
                       exists=true;
                       //putting grade category together
                       let newGrade={
+                        'token': this.profile.id_token,
                         'name': Json.name,
                         'student': id_val,
                         'value':Json.gradeVal,

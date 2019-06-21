@@ -154,14 +154,29 @@ class CourseViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
-        # if pk is None:
-        #     return missing_id_response()
-        # else:
-        #     try:
-        #         result = self.model.objects.get(pk=pk)
-        #         result.delete()
-        #     except self.model.DoesNotExist:
-        #         return object_not_found_response()
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                result.delete()
+            except self.model.DoesNotExist:
+                return object_not_found_response()
 
         #Don't allow courses to be deleted right now
         return successful_delete_response()
@@ -174,7 +189,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     __________________________________________________
     '''
 
-    def get(self, request, format=None, pk=None):
+    def get(self, request, format=None, pk=None): 
 
         token = request.GET.get('id_token', None)
         if token is None:
@@ -314,6 +329,21 @@ class GradeViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         grade_id = request.GET.get('gradeId', None)
         if grade_id is None:
             return missing_id_response()
@@ -324,45 +354,73 @@ class GradeViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return object_not_found_response()
 
-            return successful_delete_response()
+        return successful_delete_response()
 
     '''
     __________________________________________________  get
-     url: GET :: <WEBSITE>/api/grades/ OR
+     url: GET :: <WEBSITE>/api/grades/student_pk/ OR
           GET :: <WEBSITE>/api/grades/student_pk/topic_pk/ OR
           GET :: <WEBSITE>/api/grades/student_pk/topic_pk/category_pk OR
      function: Retrieves all or a single grade for a student
     __________________________________________________
     '''
 
-    def get(self, request, format=None, student_pk=None, topic_pk=None, category_pk=None):
+    #change get grades to use courseId and id_token
+    #if token is prof, send all the grades.
+    def get(self, request, format=None, course_pk=None, topic_pk=None, category_pk=None):
+        
+        #get token of the requesting user
+        token = request.GET.get('id_token', None)
+        if token is None:
+            print("Bad token!")
+            return unauthorized_access_response();
+
+        # Token is fine, so let's get user's data and make sure they have a profile
+        profile = authenticateUser(token)
+        # If no user for that token, then fail
+        if profile is None:
+            print("No profile!")
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table and get their pk
+        try:
+            userObj = Student.objects.get(id_token=token)
+        except Student.DoesNotExist:
+            print("Bad id token!")
+            return object_not_found_response();
+        #grab that user's primary key
+        user_pk = userObj.pk;
+
+        #make sure the user is in the given course
+        try:
+            StudentToCourse.objects.get(student=user_pk, course=course_pk)
+        except StudentToCourse.DoesNotExist:
+            print("User not in course!")
+            return unauthorized_access_response();
+
+        #see if this user is the professor of the course
+        is_prof = True
+        print ("Assuming user is prof")
+        try:
+            Course.objects.get(pk=course_pk, professor_id=user_pk)
+        except:
+            print ("User NOT Prof")
+            is_prof = False
+
+
         is_many = True
-        if student_pk is None and topic_pk is None and category_pk is None:
-            result = self.model.objects.all()
-        elif student_pk is not None and topic_pk is None and category_pk is None:
-            result = self.model.objects.filter(student=student_pk)
-        elif student_pk is not None and topic_pk is not None and category_pk is None:
-            # pk of student professor is trying to view
-            view_as = request.GET.get('view_as', None)
+        
+        result = self.model.objects.filter(topic_to_category__topic__course=course_pk)
 
-            # If a professor is trying to view one of their students' grades for a course
-            if view_as is not None and view_as.isdigit():
-                # 1) is the user the professor of the chose course?
-                topic = Topic.objects.get(pk=topic_pk)
-                # professor_of_course = topic.course.professor
-                # Now that we've gotten rid of lookieloos
-                student = Student.objects.get(pk=view_as)
-                student_pk = student.pk
+        if topic_pk is not None:
+            result = result.filter(topic_to_category__topic=topic_pk)
 
-            result = self.model.objects.filter(
-                student=student_pk, topic_to_category__topic=topic_pk)
-        elif student_pk is not None and topic_pk is not None and category_pk is not None:
-            try:
-                result = self.model.objects.get(
-                    student=student_pk, topic_to_category__topic=topic_pk, topic_to_category__category=category_pk)
-                is_many = False
-            except self.model.DoesNotExist:
-                return object_not_found_response()
+        if category_pk is not None:
+            result = result.filter(topic_to_category__category=category_pk)
+
+        if not is_prof:
+            print("Filtering by user " + str(user_pk))
+            result = result.filter(student=user_pk)
 
         serializer = self.serializer_class(result, many=is_many)
         return successful_create_response(serializer.data)
@@ -375,6 +433,22 @@ class GradeViewSet(viewsets.ModelViewSet):
     '''
 
     def post(self, request, format=None, student_pk=None):
+        token = request.data.get('token', None)
+
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if student_pk is None:
             serializer = self.serializer_class(data=request.data)
             if not serializer.is_valid():
@@ -393,6 +467,23 @@ class GradeViewSet(viewsets.ModelViewSet):
     '''
 
     def put(self, request, format=None, pk=None):
+        token = request.data.get('token', None)
+        
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Only professors can create courses
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
+
         grade_id = request.GET.get('gradeId', None)
         if grade_id is None:
             return missing_id_response()
@@ -432,6 +523,21 @@ class TopicToCategoryViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, topic_pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         # topic_id = id of topic to category
         if topic_pk is None:
             return missing_id_response()
@@ -558,6 +664,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -655,6 +776,22 @@ class StudentViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
+
         if pk is None:
             return missing_id_response()
         else:
@@ -938,6 +1075,21 @@ class TopicViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -1065,6 +1217,21 @@ class TopicToTopicViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             if len(request.data) > 0:
                 try:
@@ -1181,6 +1348,21 @@ class StudentToTopicViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         studentToTopicId = request.GET.get('studentToTopicId', None)
         if studentToTopicId is None:
             return missing_id_response()
@@ -1293,6 +1475,21 @@ class QuizViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -1555,6 +1752,21 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -1682,6 +1894,21 @@ class QuizQuestionAnswerViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -1801,6 +2028,21 @@ class ResourcesViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -1891,6 +2133,21 @@ class SettingsViewModel(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -2010,6 +2267,21 @@ class StudentToQuizViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -2212,6 +2484,21 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
         if pk is None:
             return missing_id_response()
         else:
@@ -2466,9 +2753,24 @@ class ExternalImportGradesViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
+
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token is fine, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
         
         # Get Param
-        professor_id = request.GET.get('id')
+        professor_id = request.GET.get('id_token')
         externalSiteToCourse_pk = pk
         
         # Validate parameters
@@ -3097,3 +3399,110 @@ class ExternalImportGradesTestViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
+'''
+______________________________________________________________________________________________      
+ CourseTopicToStudentViewSet : Gets students associated with a given course and topic
+ (just the student unless user is the professor)
+______________________________________________________________________________________________
+'''
+class CourseTopicToStudentViewSet(viewsets.ModelViewSet):
+
+    renderer_classes = (JSONRenderer, )
+    queryset = StudentToTopic.objects.all()
+    serializer_class = StudentToTopicSerializer
+    model = StudentToTopic
+
+    '''
+    _______________________________________________________ Delete
+     <WEBSITE>/api/coursetopictostudent/
+    _______________________________________________________
+    '''
+
+    def delete(self, request, format=None, pk=None):
+        return Response(data={
+            'status': '406 - Bad Request',
+            'result': 'Currently not a feature of SPT'
+        }, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    '''
+    _______________________________________________________ Get
+     <WEBSITE>/api/coursetopictostudent/course_pk/topic_pk/?id_token=xxxxx 
+    _______________________________________________________
+    '''
+
+    def get(self, request, format=None, course_pk=None, topic_pk=None):
+        #get token of the requesting user
+        token = request.GET.get('id_token', None)
+        if token is None:
+            return unauthorized_access_response();
+
+        # Token is fine, so let's get user's data and make sure they have a profile
+        profile = authenticateUser(token)
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Grab the user from the Student table and get their pk
+        try:
+            userObj = Student.objects.get(id_token=token)
+        except Student.DoesNotExist:
+            return object_not_found_response();
+        #grab that user's primary key
+        user_pk = userObj.pk;
+
+        #make sure the user is in the given course
+        try:
+            StudentToCourse.objects.get(student=user_pk, course=course_pk)
+        except StudentToCourse.DoesNotExist:
+            return unauthorized_access_response();
+
+        #see if this user is the professor of the course
+        is_prof = True
+        try:
+            Course.objects.get(pk=course_pk, professor_id=user_pk)
+        except:
+            is_prof = False
+
+
+        students = []
+        # Get all student to topic relations
+        student_to_topics = StudentToTopic.objects.filter(
+            course=course_pk, topic=topic_pk)
+
+        if not is_prof:
+            student_to_topics = student_to_topics.filter(student=user_pk)
+
+        # For each relation, get the student
+        for student in student_to_topics:
+            # students.append({"text": student.student.email})
+            students.append({"text": student.student.get_name(),
+                             "value": student.student.pk})
+        # Return the data
+        return HttpResponse(json.dumps(students, indent=4), content_type='application/json')
+
+
+    '''
+    _______________________________________________________ Post
+     <WEBSITE>/api/external_import_grades_test/
+    _______________________________________________________
+    '''
+
+    def post(self, request, format=None, pk=None):
+        return Response(data={
+            'status': '406 - Bad Request',
+            'result': 'Currently not a feature of SPT'
+        }, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    '''
+    _______________________________________________________ Put
+     <WEBSITE>/api/external_import_grades_test/, data
+    _______________________________________________________
+    '''
+
+    def put(self, request, format=None, pk=None):
+        return Response(data={
+            'status': '406 - Bad Request',
+            'result': 'Currently not a feature of SPT'
+        }, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    

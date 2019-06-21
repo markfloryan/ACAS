@@ -161,7 +161,7 @@ export default {
     removeResource(n) {
       console.log(this.resources[n].pk);
       axios
-        .delete(`${API_URL}/resources/${this.resources[n].pk}`)
+        .delete(`${API_URL}/resources/${this.resources[n].pk}/?id_token=${this.profile.id_token}`)
         .then(function(response) {
           //this.resources.splice(n, 1);
           //this.retrieveResources();

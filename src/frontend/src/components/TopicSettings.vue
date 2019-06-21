@@ -374,10 +374,11 @@ export default {
         .then(categories => {
           this.topicToCategory = categories.data.result;
           // console.log(this.topicToCategory);
+          const profile = JSON.parse(localStorage.getItem('profile'));
 
           // Delete the resource
           axios
-            .delete(`${API_URL}/topic/category/${this.topicToCategory[n].pk}/`)
+            .delete(`${API_URL}/topic/category/${this.topicToCategory[n].pk}/?id_token=${profile.auth.profile.id_token}`)
             .then(function(response) {
               // console.log(response);
             })

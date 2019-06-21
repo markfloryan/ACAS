@@ -128,16 +128,32 @@ def update_class_grades(request, class_pk, student_pk):
     return HttpResponse(json.dumps(topics_updated, indent=4), content_type='application/json')
 
 
-# Gets the students in a class and topic
-def get_class_and_topic_students(request, class_pk, topic_pk):
-    students = []
-    # Get all student to topic relations
-    student_to_topics = StudentToTopic.objects.filter(
-        course=class_pk, topic=topic_pk)
-    # For each relation, get the student
-    for student in student_to_topics:
-        # students.append({"text": student.student.email})
-        students.append({"text": student.student.get_name(),
-                         "value": student.student.pk})
-    # Return the data
-    return HttpResponse(json.dumps(students, indent=4), content_type='application/json')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

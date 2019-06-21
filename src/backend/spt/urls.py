@@ -60,7 +60,7 @@ external_sites_to_grade = api_views.ExternalSiteToGradeViewSet.as_view(request_o
 external_import_grades_test = api_views.ExternalImportGradesTestViewSet.as_view(request_override_map)
 
 update_class_grade = views.update_class_grades
-students_in_topic = views.get_class_and_topic_students
+students_in_topic = api_views.CourseTopicToStudentViewSet.as_view(request_override_map)
 
 search_list = api_views.SearchViewSet.as_view(
     request_override_map)
@@ -69,36 +69,43 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 
-    # API
+    # Courses - FIXED
     url(r'^api/courses/(?P<pk>[0-9]+)', course_list, name='course-detail'),
     url(r'^api/courses/', course_list, name='course-list'),
-
     url(r'^api/courses/(?P<pk>[0-9]+)/graph-data', api_views.CourseViewSet.as_view(
         {"get": "graph_data"}
     ), name='course-graph-data'),
 
+    #search and students
     url(r'^api/search/', search_list, name='search-detail'),
     url(r'^api/students/(?P<pk>[0-9]+)', student_list, name='student-detail'),
     url(r'^api/students/', student_list, name='student-list'),
+    
     # url(r'^api/professors/', professor_list, name='professor-list'),
     # url(r'^api/professors/(?P<pk>[0-9]+)',
     #     professor_list, name='professor-detail'),
+    
     url(r'^api/topics/(?P<pk>[0-9]+)', topic_list, name='topic-detail'),
     url(r'^api/topics/', topic_list, name='topic-list'),
+    
     url(r'^api/student/course/(?P<pk>[0-9]+)',
         student_to_course_list, name='student-to-quiz-detail'),
     url(r'^api/student/course/', student_to_course_list,
         name='student-to-quiz-list'),
+    
     url(r'^api/student/quiz/(?P<pk>[0-9]+)',
         student_to_quiz_list, name='student-to-quiz-detail'),
     url(r'^api/student/quiz/', student_to_quiz_list, name='student-to-quiz-list'),
+    
     url(r'^api/student/topics/(?P<class_id>[0-9]+)/(?P<student_id>[0-9]+)',
         student_to_topic_list, name='student-to-topic-detail'),
     url(r'^api/student/topics/', student_to_topic_list,
         name='student-to-topic-list'),
+    
     url(r'^api/topic/topics/(?P<pk>[0-9]+)',
         topic_to_topic_list, name='topic-to-topic-detail'),
     url(r'^api/topic/topics/', topic_to_topic_list, name='topic-to-topic-list'),
+    
     url(r'^api/resources/(?P<pk>[0-9]+)',
         resources_list, name='resources-detail'),
     url(r'^api/resources/', resources_list, name='resources-list'),
@@ -142,22 +149,20 @@ urlpatterns = [
     url(r'^api/quiz-question-answer/',
         quiz_question_answer_list, name='student-to-quiz-list'),
 
-    # Grades
-    url(r'^api/grades/(?P<student_pk>[0-9]+)/(?P<topic_pk>[0-9]+)/(?P<category_pk>[A-z]+)',
+    # Grades - FIXED
+    url(r'^api/grades/(?P<course_pk>[0-9]+)/(?P<topic_pk>[0-9]+)/(?P<category_pk>[A-z]+)',
         grade_list, name='grade-detail'),
-    url(r'^api/grades/(?P<student_pk>[0-9]+)/(?P<topic_pk>[0-9]+)',
+    url(r'^api/grades/(?P<course_pk>[0-9]+)/(?P<topic_pk>[0-9]+)',
         grade_list, name='grade-detail'),
-    url(r'^api/grades/(?P<student_pk>[0-9]+)',
+    url(r'^api/grades/(?P<course_pk>[0-9]+)',
         grade_list, name='grade-detail'),
-    url(r'^api/grades',
-        grade_list, name='grade-list'),
 
     # Get the total grade for a class
     url(r'^api/class_grades/(?P<class_pk>[0-9]+)/(?P<student_pk>[0-9]+)',
         update_class_grade, name='update-class-grades'),
 
     # Get a list of students in a course for a topic
-    url(r'^api/students_in_topic/(?P<class_pk>[0-9]+)/(?P<topic_pk>[0-9]+)',
+    url(r'^api/coursetopictostudent/(?P<course_pk>[0-9]+)/(?P<topic_pk>[0-9]+)',
         students_in_topic, name='get-student-in-topic'),
 
     # Category
