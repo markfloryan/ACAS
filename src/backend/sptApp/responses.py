@@ -88,7 +88,7 @@ def successful_delete_response():
 def successful_get_externalSite():
     return Response({
         'status': '200 - Ok',
-        'result': "Successfully retrieved external information",
+        'result': {"Successfully retrieved external information"},
     }, status=status.HTTP_200_OK)
 
 def successful_get_externalSite_withData(data): # pragma: no cover

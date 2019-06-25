@@ -43,9 +43,7 @@
       <div v-if="isSignUp" id="studentButton" class="g-signin-button" @click="signUp(false)">
         <p>Student Sign Up</p>
       </div>
-      <div v-if="isSignUp" id="professorButton" class="g-signin-button" @click="signUp(true)">
-        <p>Professor Sign Up</p>
-      </div>
+      
       <!-- switch from signin to signup-->
     <div v-if="!isSignUp" class="center-signup">
       <a @click="navigateSignUp ">or sign up</a>

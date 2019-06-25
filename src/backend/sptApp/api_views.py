@@ -112,13 +112,24 @@ def authenticateUser(token, format=None, pk=None):
             #return external_error()
             return None
 
+        # Check if they are a professor
+        is_prof = 'f'
+        try:
+            professor = Student.objects.get(id_token=professor_id)
+        except Student.DoesNotExist:
+            is_prof = 'f'
+
+        # Check if professor
+        if ( professor.get_is_professor() ): 
+            is_prof = 't'
+
         # Set up the user's data
         data = {
             'first_name': fullProfile.get('given_name'),
             'last_name': fullProfile.get('family_name'),
             'email': fullProfile.get('email'),
             'id_token': token,
-            'is_professor': request.data.get('isProfessor')
+            'is_professor': is_prof
         }
 
         return data
@@ -776,32 +787,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     '''
 
     def delete(self, request, format=None, pk=None):
-        token = request.GET.get('id_token', None)
-        if token is None:
-            return unauthorized_access_response();
-        
-        # Token is fine, so let's get user's data
-        profile = authenticateUser(token)
-
-        # If no user for that token, then fail
-        if profile is None:
-            return unauthorized_access_response();
-
-        # Grab the user from the Student table
-        if not profile['is_professor'] == 't':
-            return unauthorized_access_response();
-
-
-        if pk is None:
-            return missing_id_response()
-        else:
-            try:
-                result = self.model.objects.get(pk=pk)
-                result.delete()
-            except self.model.DoesNotExist:
-                return object_not_found_response()
-
-            return successful_delete_response()
+        return unauthorized_access_response();
 
     '''
     __________________________________________________  Get
@@ -817,6 +803,9 @@ class StudentViewSet(viewsets.ModelViewSet):
         if pk is None:
             result = self.model.objects.all()
             id_token = request.GET.get('id_token', None)
+
+            if id_token is None:
+                return unauthorized_access_response();
 
             if id_token is not None:
                 try:
@@ -868,7 +857,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                             'last_name': user.last_name,
                             'email': user.email,
                             'id_token': request.data.get('token'),
-                            'group': user.is_professor
+                            'group': 'f'
                         }
                         return successful_create_response(profile)
                 return invalid_serializer_response(serializer.errors)
@@ -890,21 +879,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     '''
 
     def put(self, request, format=None, pk=None):
-        if pk is None:
-            return missing_id_response()
-        else:
-            try:
-                result = self.model.objects.get(pk=pk)
-            except self.model.DoesNotExist:
-                return object_not_found_response()
-
-            serializer = self.serializer_class(result, data=request.data)
-
-            if not serializer.is_valid():
-                return invalid_serializer_response(serializer.errors)
-
-            serializer.save()
-            return successful_edit_response(serializer.data)
+        return unauthorized_access_response();
 
 
 """ Professor """
@@ -2790,7 +2765,7 @@ class ExternalImportGradesViewSet(viewsets.ModelViewSet):
 
             
             # Check if professor
-            if ( not professor.get_is_professor() ): 
+            if ( profile['is_professor'] == 'f' ): 
                 raise Exception('Student ID passed in')
 
 
