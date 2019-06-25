@@ -9,7 +9,11 @@ def unauthorized_access_response():
         'result': 'You are either not logged in or not authorized to view this content'
     }, status=status.HTTP_400_BAD_REQUEST)
 
-
+def id_token_error_response():
+    return Response({
+        'status': '404 - Not Found',
+        'result': 'There appears to be a problem with your id_token'
+    }, status=status.HTTP_404_NOT_FOUND)
 
 def missing_id_response():
     return Response({

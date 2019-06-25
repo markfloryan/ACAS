@@ -41,7 +41,7 @@
 
       <!-- Sign Up -->
       <div v-if="isSignUp" id="studentButton" class="g-signin-button" @click="signUp(false)">
-        <p>Student Sign Up</p>
+        <p>Create Account</p>
       </div>
       
       <!-- switch from signin to signup-->

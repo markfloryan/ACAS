@@ -62,68 +62,81 @@ const actions = {
   signUp({ dispatch, commit }, isProfessor) {
     console.log('signing up... ');
     return new Promise((resolve, reject) => {
+
+      //Have user login to google account
       dispatch('initGapi').then(() => {
         gapi.auth2
           .getAuthInstance()
           .signIn()
           .then(() => {
-            // Student case
-            if (!isProfessor) {
-              // verify token with a backend server (identify user)
-              dispatch('signUpUser')
-                .then(profile => {
-                  console.log({ profile });
-                  const data = {
-                    token: profile.id_token,
-                  };
-                  // Retrieve their settings
-                  axios
-                    .post(`${API_URL}/settings/`, data)
-                    .then(response => {
-                      console.log('CREATED SETTINGS');
-                    })
-                    .catch(response => {
-                      console.log('ERROR CREATING SETTINGS');
-                    })
-                    .finally(() => {
-                      console.log('FINALLY SETTINGS');
-                      commit('signIn', profile);
-                      resolve();
-                    });
-                })
-                // if an error exists, log them out
-                .catch(err => {
-                  console.log(err);
-                  dispatch('signOut').then(() => {
-                    reject();
-                  });
-                });
+
+            //Now get their id token from google given that sign in
+            var token = null;
+            try {
+              token = gapi.auth2
+                .getAuthInstance()
+                .currentUser.get()
+                .getAuthResponse().id_token;
+            } catch (e) {
+              reject();
             }
-            // professor case
-            else {
-              // verify token with a backend server (identify user)
-              dispatch('signUpProfessor')
-                .then(profile => {
-                  console.log({ profile });
-                  const data = {
-                    token: profile.id_token,
-                  };
-                  axios
-                    .post(`${API_URL}/settings/`, data)
-                    .then(repsonse => {})
-                    .catch(response => {})
-                    .finally(() => {
-                      commit('signIn', profile);
-                      resolve();
-                    });
-                })
-                .catch(err => {
-                  console.log(err);
-                  dispatch('signOut').then(() => {
-                    reject();
+            if (!token)
+              reject();
+            
+            //Now we actually sign them up on our backend using that token
+            api
+              .createUser(token)
+              .then(res => {
+                //Success! Get the profile and complete the login
+                var profile = res.data.result;
+
+                const data = {
+                  token: profile.id_token,
+                };
+
+                // Retrieve their settings
+                axios
+                  .post(`${API_URL}/settings/`, data)
+                  .then(response => {
+                    console.log('CREATED SETTINGS');
+                  })
+                  .catch(response => {
+                    console.log('ERROR CREATING SETTINGS');
+                  })
+                  .finally(() => {
+                    console.log('FINALLY SETTINGS');
+                    commit('signIn', profile);
+                    resolve();
                   });
-                });
-            }
+              })
+              .catch(err => {
+                // https://gist.github.com/fgilio/230ccd514e9381fafa51608fcf137253
+
+                // Custom toasts for errors from google and functions to logging in
+                if (err.response) {
+                  if (err.response.status == 404) {
+                    store.commit('toast/openToast', true);
+                    store.commit('toast/setToastInfo', {
+                      type: 'error',
+                      title: 'User does not exist',
+                    });
+                  }
+                  if (err.response.status == 400) {
+                    store.commit('toast/openToast', true);
+                    store.commit('toast/setToastInfo', {
+                      type: 'error',
+                      title: 'Bad Request',
+                    });
+                  }
+                  if (err.response.status == 500) {
+                    store.commit('toast/openToast', true);
+                    store.commit('toast/setToastInfo', {
+                      type: 'error',
+                      title: 'Internal Server Error',
+                    });
+                  }
+                }
+              });
           });
       });
     });
@@ -251,116 +264,6 @@ const actions = {
   },
   // This action verifies the id_token parameter with a backend
   // server and receives the user profile as response
-  signUpUser({ commit }) {
-    console.log('verifying token and creating user...');
-    return new Promise((resolve, reject) => {
-      var token = null;
-      try {
-        token = gapi.auth2
-          .getAuthInstance()
-          .currentUser.get()
-          .getAuthResponse().id_token;
-      } catch (e) {
-        reject();
-      }
-      if (!token) {
-        reject();
-      } else {
-        /* This is where the verification is taking place */
-        // We actually want to save the id_token, not the unique part
-        api
-          .createUser(token, true, false)
-          .then(res => {
-            console.log(res.data.result);
-            resolve(res.data.result);
-          })
-          .catch(err => {
-            // https://gist.github.com/fgilio/230ccd514e9381fafa51608fcf137253
-
-            // Custom toasts for errors from google and functions to logging in
-            if (err.response) {
-              if (err.response.status == 404) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'User does not exist',
-                });
-              }
-              if (err.response.status == 400) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'Bad Request',
-                });
-              }
-              if (err.response.status == 500) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'Internal Server Error',
-                });
-              }
-            }
-          });
-      }
-    });
-  },
-  signUpProfessor({ commit }) {
-    console.log('verifying token and creating user...');
-    return new Promise((resolve, reject) => {
-      var token = null;
-      try {
-        token = gapi.auth2
-          .getAuthInstance()
-          .currentUser.get()
-          .getAuthResponse().id_token;
-      } catch (e) {
-        reject();
-      }
-      if (!token) {
-        reject();
-      } else {
-        /* This is where the verification is taking place */
-        // We actually want to save the id_token, not the unique part
-        api
-          .createUser(token, true, true)
-          .then(res => {
-            console.log(res.data.result);
-            resolve(res.data.result);
-          })
-          .catch(err => {
-            // https://gist.github.com/fgilio/230ccd514e9381fafa51608fcf137253
-
-            // Custom toasts for errors from google and functions to logging in
-            if (err.response) {
-              if (err.response.status == 404) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'User does not exist',
-                });
-              }
-              if (err.response.status == 400) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'Bad Request',
-                });
-              }
-              if (err.response.status == 500) {
-                store.commit('toast/openToast', true);
-                store.commit('toast/setToastInfo', {
-                  type: 'error',
-                  title: 'Internal Server Error',
-                });
-              }
-            }
-          });
-      }
-    });
-  },
-  // This action verifies the id_token parameter with a backend
-  // server and receives the user profile as response
   verifyToken({ commit }, token=null) {
     console.log('verifying token and user...');
 
@@ -388,8 +291,8 @@ const actions = {
         reject();
       }
       else{
-        api
-          .createUser(token, false)
+        axios
+          .get(`${ API_URL }/students/?id_token=${token}`)
           .then(res => {
             resolve(res.data.result);
           })

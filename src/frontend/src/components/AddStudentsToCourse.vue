@@ -86,7 +86,7 @@ export default {
     retrieveAllStudents() {
       return new Promise((resolve, reject) => {
         axios
-          .get(`${API_URL}/students/`)
+          .get(`${API_URL}/students/?id_token=${this.profile.id_token}`)
           .then(response => {
             const students = response.data.result;
             this.studentRoster = students.filter((student, index) => {

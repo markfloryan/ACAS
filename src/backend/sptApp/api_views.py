@@ -791,85 +791,70 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     '''
     __________________________________________________  Get
-     url: GET :: <WEBSITE>/api/students/ OR
-          GET :: <WEBSITE>/api/students/<STUDENT_ID> OR
-          GET :: <WEBSITE>/api/students/?id_token= OR
-     function: Retrieves all or a single student by their ID token
+     url: GET :: <WEBSITE>/api/students/?id_token=
+     function: Signs a user in by checking if they exist in the DB
     __________________________________________________
     '''
 
     def get(self, request, format=None, pk=None):
-        is_many = True
-        if pk is None:
-            result = self.model.objects.all()
-            id_token = request.GET.get('id_token', None)
+        id_token = request.GET.get('id_token', None)
 
-            if id_token is None:
-                return unauthorized_access_response();
+        if id_token is None:
+            return unauthorized_access_response();
 
-            if id_token is not None:
-                try:
-                    fullProfile = authenticateUser(id_token, format, pk)
-                    if(fullProfile is None):
-                        return external_error()
-                    # student = Student.objects.get(email=fullProfile["email"])
-
-                    is_many = False
-                    result = self.model.objects.get(email=fullProfile["email"])
-                except self.model.DoesNotExist:
-                    return object_not_found_response()
-        else:
-            try:
-                result = self.model.objects.get(pk=pk)
-                is_many = False
-            except self.model.DoesNotExist:
+        try:
+            fullProfile = authenticateUser(id_token, format, pk)
+            if(fullProfile is None):
                 return object_not_found_response()
 
-        serializer = self.serializer_class(result, many=is_many)
+            student = Student.objects.get(email=fullProfile["email"])
+
+            if student.id_token != id_token:
+                #if student has account but no token set, then just set the token
+                #this means prof made account and student logging in for first time
+                #otherwise reject the login
+                if student.id_token == "":
+                    student.id_token = id_token
+                    student.save()
+                else:
+                    return object_not_found_response();
+
+        except self.model.DoesNotExist:
+            return object_not_found_response()
+
+        serializer = self.serializer_class(student, many=False)
         return successful_create_response(serializer.data)
+
+
     '''
     __________________________________________________  Post
      url: POST :: <WEBSITE>/api/students/
-     function: Creates a given student
+     function: Creates a given student if that student does not exist
+     post data contains 'token' with id token
     __________________________________________________
     '''
 
     def post(self, request, format=None, pk=None):
-        if pk is None:
-            token = request.data.get('token')
-            data = authenticateUser(token, format, pk)
+        
+        token = request.data.get('token')
+        if token is None:
+            return external_error()
 
-            if data is None:
-                return external_error()
+        data = authenticateUser(token, format, pk)
+        if data is None:
+            return object_not_found_response()
 
-            serializer = self.serializer_class(data=data)
-            if not serializer.is_valid():
-                if(serializer.errors['email'][0] == "user with this email already exists."):
-                    # If they already have an email and this is the verification, then log them in
-                    if(not request.data.get('isCreate')):
-                        user = self.model.objects.get(
-                            email=data.get('email'))
-                        student_queryset = Student.objects.filter(pk=user.pk)
-                        student_queryset.update(
-                            id_token=request.data.get('token'))
-                        profile = {
-                            'first_name': user.first_name,
-                            'last_name': user.last_name,
-                            'email': user.email,
-                            'id_token': request.data.get('token'),
-                            'group': 'f'
-                        }
-                        return successful_create_response(profile)
-                return invalid_serializer_response(serializer.errors)
-            #  If they are trying to signin from the main page without creating a user ever
-            if(not request.data.get('isCreate')):
-                return object_not_found_response() # Try to sign in without email in system, fail
-            else:
-                # Create the profile for the account
-                serializer.save()
-                return successful_create_response(data)
-        else:
-            return colliding_id_response()
+        serializer = self.serializer_class(data=data)
+        if not serializer.is_valid():
+            if(serializer.errors['email'][0] == "user with this email already exists."):
+                return colliding_id_response();
+
+            return invalid_serializer_response(serializer.errors)
+
+        
+        # Create the profile for the account
+        serializer.save()
+        return successful_create_response(data)
 
     '''
     __________________________________________________  Put

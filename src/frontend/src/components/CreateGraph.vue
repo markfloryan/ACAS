@@ -573,7 +573,7 @@ export default {
         let final_id='noone';
         let done = false;
         axios
-          .get(`${API_URL}/students/`)
+          .get(`${API_URL}/students/?id_token=${this.profile.id_token}`)
           .then(response => {
             const students = response.data.result;
             studentRoster = students.filter((student, index) => {

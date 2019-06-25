@@ -78,7 +78,6 @@ urlpatterns = [
 
     #search and students
     url(r'^api/search/', search_list, name='search-detail'),
-    url(r'^api/students/(?P<pk>[0-9]+)', student_list, name='student-detail'),
     url(r'^api/students/', student_list, name='student-list'),
     
     # url(r'^api/professors/', professor_list, name='professor-list'),

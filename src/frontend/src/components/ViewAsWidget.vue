@@ -44,7 +44,7 @@ export default {
   },
   methods: {
     retrieveStudentInfo(studentPk) {
-      axios.get(`${API_URL}/students/${studentPk}`)
+      axios.get(`${API_URL}/students/?id_token=${this.profile.id_token}`)
         .then((response) => {
           const userInfo = response.data.result;
 
