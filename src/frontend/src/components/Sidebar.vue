@@ -65,7 +65,7 @@ export default {
   // When the component is created, it sends an network request to our API,
   // asking for the particular list of courses they're enrolled / involved with
   created() {
-    this.isProfessor = this.profile.group;
+    this.isProfessor = this.profile.is_professor;
     let courseData;
     const profile = JSON.parse(localStorage.getItem('profile'));
     axios.get(`${API_URL}/student/course/?id_token=${profile.auth.profile.id_token}`)

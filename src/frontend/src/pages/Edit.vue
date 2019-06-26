@@ -46,7 +46,7 @@ export default {
   created() {
     // Maybe check if data in vuex, load from there,
     // if not make GET request and then store in vuex?
-    this.isProfessor = this.profile.group;
+    this.isProfessor = this.profile.is_professor;
     // console.log(this.profile);
     this.isLoading = true;
     // Get the ID of the student who is logged in

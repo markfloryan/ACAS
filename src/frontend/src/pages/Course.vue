@@ -104,8 +104,8 @@ export default {
     retrieveClassGraph() {
       // Maybe check if data in vuex, load from there,
       // if not make GET request and then store in vuex?
-      this.isProfessor = this.profile.group;
-      // console.log(this.profile);
+      this.isProfessor = this.profile.is_professor;
+      console.log(this.profile);
       this.isLoading = true;
 
       let viewAs = '';

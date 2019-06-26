@@ -20,7 +20,7 @@
         <br/>
 
         <!-- Is Professor? -->
-        <div class="rightAlign" v-if="this.profile.group == 1">
+        <div class="rightAlign" v-if="this.profile.is_professor == 1">
           <h2 style="display:inline;"> External API's </h2>
           <span style="float:right;">
             <button
@@ -51,7 +51,7 @@
 
         
         <!-- Is Professor? -->
-        <div class="rightAlign" v-if="this.profile.group == 1">
+        <div class="rightAlign" v-if="this.profile.is_professor == 1">
    
           <h4 class="rightAlign" style="font-style: italic; text-align: right;">These features coming soon</h4>
           <div style="position: relative;">
@@ -229,7 +229,7 @@ export default {
     ...mapState('auth', ['profile']),
   },
   mounted() {
-    this.isProfessor = this.profile.group;
+    this.isProfessor = this.profile.is_professor;
   },
   methods: {
 

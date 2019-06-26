@@ -86,7 +86,7 @@ export default {
     };
   },
   created() {
-    if (this.profile.group) {
+    if (this.profile.is_professor) {
       this.role = 'professor';
     }
     this.retrieveQuiz()

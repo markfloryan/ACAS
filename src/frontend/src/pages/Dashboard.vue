@@ -6,8 +6,8 @@
     This is the page a user is jumped to after a successful login/signup.
    -->
   <div class="dashboard">
-    <h2 v-if="this.profile.group == 0" class="title">Welcome back{{ userFullName }}</h2>
-    <h2 v-if="this.profile.group == 1" class="title">Welcome back, Professor {{ this.profile.last_name }}</h2>
+    <h2 v-if="this.profile.is_professor == 0" class="title">Welcome back{{ userFullName }}</h2>
+    <h2 v-if="this.profile.is_professor == 1" class="title">Welcome back, Professor {{ this.profile.last_name }}</h2>
     <Sidebar class="sidebar"/>
     <div class="content">
       <div class="call-to-action">
@@ -46,7 +46,7 @@ export default {
     ...mapState('auth', ['profile']),
   },
   mounted() {
-    this.isProfessor = this.profile.group;
+    this.isProfessor = this.profile.is_professor;
   },
   created() {
     
