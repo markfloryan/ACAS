@@ -53,6 +53,8 @@ quiz_question_list = api_views.QuizQuestionViewSet.as_view(
 quiz_question_answer_list = api_views.QuizQuestionAnswerViewSet.as_view(
     request_override_map)
 
+course_roster_upload = api_views.CourseRosterUpload.as_view(request_override_map)
+
 external_import_grades = api_views.ExternalImportGradesViewSet.as_view(request_override_map)
 external_sites = api_views.ExternalSiteViewSet.as_view(request_override_map)
 external_sites_to_course = api_views.ExternalSiteToCourseViewSet.as_view(request_override_map)
@@ -79,6 +81,8 @@ urlpatterns = [
     #search and students
     url(r'^api/search/', search_list, name='search-detail'),
     url(r'^api/students/', student_list, name='student-list'),
+
+    url(r'^api/courseRosterUpload/(?P<coursePk>[0-9]+)', course_roster_upload, name='course-roster-upload'),
     
     # url(r'^api/professors/', professor_list, name='professor-list'),
     # url(r'^api/professors/(?P<pk>[0-9]+)',
@@ -111,21 +115,7 @@ urlpatterns = [
     
     # ********************************************************************************************************  External API
 
-    url(r'^api/external_import_grades/(?P<pk>[0-9]+)',external_import_grades),
-    url(r'^api/external_import_grades/',external_import_grades),
-
-    
-    url(r'^api/external_sites/(?P<pk>[0-9]+)',external_sites),
-    url(r'^api/external_sites/',external_sites),
-    
-    url(r'^api/external_sites_to_course/(?P<pk>[0-9]+)',external_sites_to_course),
-    url(r'^api/external_sites_to_course/',external_sites_to_course),
-    
-    url(r'^api/external_sites_to_grade/(?P<pk>[0-9]+)',external_sites_to_grade),
-    url(r'^api/external_sites_to_grade/',external_sites_to_grade),
-
-    url(r'^api/external_import_grades_test/(?P<pk>[0-9]+)',external_import_grades_test),
-    url(r'^api/external_import_grades_test/',external_import_grades_test),
+    #
 
     # ********************************************************************************************************
 

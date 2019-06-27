@@ -9,6 +9,12 @@ def unauthorized_access_response():
         'result': 'You are either not logged in or not authorized to view this content'
     }, status=status.HTTP_400_BAD_REQUEST)
 
+def no_implementation_response():
+    return Response({
+        'status': '400 - Bad Request',
+        'result': 'This functionality is not implemented yet.'
+    }, status=status.HTTP_400_BAD_REQUEST)
+
 def id_token_error_response():
     return Response({
         'status': '404 - Not Found',

@@ -18,6 +18,8 @@ import urllib.request
 # decode urls
 import urllib.parse
 
+import csv
+
 # Then internal
 from .models import (
     Course,
@@ -2682,6 +2684,130 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
             return successful_edit_response(serializer.data)
 
 
+
+
+'''
+______________________________________________________________________________________________      
+CourseRosterUpload
+______________________________________________________________________________________________
+'''
+
+
+class CourseRosterUpload(viewsets.ModelViewSet):
+    renderer_classes = (JSONRenderer, )
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    model = Student
+
+    '''
+    __________________________________________________  Delete
+     url: DELETE :: NO FUNCTIONALITY
+    __________________________________________________
+    '''
+
+    def delete(self, request, format=None, coursePk=None):
+        return no_implementation_response()
+
+    '''
+    __________________________________________________  Get
+     url: GET :: NO FUNCTIONALITY
+    __________________________________________________
+    '''
+
+    def get(self, request, format=None, coursePk=None):
+        return no_implementation_response()
+
+    '''
+    __________________________________________________  Post
+     url: POST :: <WEBSITE>/api/student/course/
+     function: Creates a given student course relationship (ie enrolls them in that class)
+    __________________________________________________
+    '''
+
+    def post(self, request, format=None, coursePk=None):
+        
+        #get token of requesting user
+        token = request.data.get('token', None)
+        if token is None:
+            return unauthorized_access_response();
+        
+        # Token exists, so let's get user's data
+        profile = authenticateUser(token)
+
+        # If no user for that token, then fail
+        if profile is None:
+            return unauthorized_access_response();
+
+        # Make sure they are a prof
+        if not profile['is_professor'] == 't':
+            return unauthorized_access_response();
+
+        #grab professor from student table
+        try:
+            prof = Student.objects.get(id_token=token)
+        except Student.DoesNotExist:
+            return object_not_found_response()
+
+        #Make sure this is the prof of the given course
+        try:
+            course = Course.objects.get(pk=coursePk, professor_id=prof.pk)
+        except Course.DoesNotExist:
+            return object_not_found_response()
+
+        #Ok, everything looks good, let's do the actual uploading / student creation
+        emails = []
+        with open( "./sptApp/exampleRoster.csv", "r", encoding="utf-8-sig" ) as roster:
+            reader = csv.DictReader( roster )
+
+            students = []
+            pkMax = Student.objects.last().pk
+            print("biggest pk is " + str(pkMax))
+
+            for line in reader:
+                #print ( line )
+                email = line[ 'email' ]
+                first = line[ 'firstname' ]
+                last = line[ 'lastname' ] 
+                username = line[ 'username' ]
+
+                emails.append(email)
+
+                #issue the next valid primary key
+                pkMax += 1
+                primKey = pkMax
+
+                #make the student object
+                student = Student(pk=primKey, email=email, first_name=first, last_name=last, username=username, id_token="", is_professor='f')
+                students.append(student);
+
+            Student.objects.bulk_create(students, ignore_conflicts=True)
+
+        #Students are created, let's make the student course pairs
+        #first, clear out the old mappings
+        StudentToCourse.objects.filter(course=course).delete()
+        students = Student.objects.filter(email__in=emails)
+        pkMax = StudentToCourse.objects.last().pk
+        stcList = []
+        for student in students:
+            pkMax += 1
+            primKey = pkMax
+            stc = StudentToCourse(pk=primKey, course=course, student=student, semester='')
+            stcList.append(stc)
+
+        StudentToCourse.objects.bulk_create(stcList)
+
+
+        return successful_create_response({})
+
+    '''
+    __________________________________________________  Put
+     url: PUT :: <WEBSITE>/api/student/course/<STUDENT_ID>
+     function: Edits a given student course relationship
+    __________________________________________________
+    '''
+
+    def put(self, request, format=None, coursePk=None):
+        return no_implementation_response()
 
 
 
