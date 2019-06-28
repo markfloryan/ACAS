@@ -6,20 +6,7 @@
       - Allows a professor to add a student to the course being shown in Course.vue
   -->
   <div class="add-students">
-    <sui-form @submit.prevent>
-      <sui-form-field>
-        <label>Student</label>
-        <sui-dropdown
-          placeholder="Student"
-          selection
-          :options="studentRoster"
-          v-model="selectedStudent"
-          :noResultsMessage="'No students found'"
-        />
-      </sui-form-field>
-      <div style="text-align: center; margin-bottom: 18pt;">
-        <button type="button" @click="addStudent()" class="btn btn-create create-btn">Add student</button>
-      </div>
+      <CourseRosterUpload :courseId="courseId" />
       <div class="rostered-students">
         <sui-table v-if="newStudents.length > 0" celled>
           <sui-table-header>
@@ -43,7 +30,7 @@
           </sui-table-body>
         </sui-table>
       </div>
-    </sui-form>
+    
     <LoadingLayer v-if="isLoading" :message="'Sending...'"/>
   </div>
 </template>
@@ -53,12 +40,14 @@ import axios from 'axios';
 import { mapState } from 'vuex';
 import LoadingLayer from '@/components/LoadingLayer';
 import { API_URL } from '@/constants';
+import CourseRosterUpload from '@/components/CourseRosterUpload';
 
 export default {
   name: 'AddStudentsToCourse',
 
   components: {
     LoadingLayer,
+    CourseRosterUpload,
   },
   props: {
     courseId: {

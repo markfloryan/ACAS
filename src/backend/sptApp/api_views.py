@@ -2728,6 +2728,7 @@ class CourseRosterUpload(viewsets.ModelViewSet):
         
         #get token of requesting user
         token = request.data.get('token', None)
+        print("token is " + str(token))
         if token is None:
             return unauthorized_access_response();
         
@@ -2754,33 +2755,43 @@ class CourseRosterUpload(viewsets.ModelViewSet):
         except Course.DoesNotExist:
             return object_not_found_response()
 
-        #Ok, everything looks good, let's do the actual uploading / student creation
+
+        #grab the file
+        file = request.FILES['file']
+        if file is None:
+            print("File is NONE")
+            return object_not_found_response()
+
         emails = []
-        with open( "./sptApp/exampleRoster.csv", "r", encoding="utf-8-sig" ) as roster:
-            reader = csv.DictReader( roster )
 
-            students = []
-            pkMax = Student.objects.last().pk
-            print("biggest pk is " + str(pkMax))
+        #start parsing the file
+        file_data = file.read().decode("utf-8-sig").splitlines()     
+        reader = csv.DictReader(file_data)
 
-            for line in reader:
-                #print ( line )
-                email = line[ 'email' ]
-                first = line[ 'firstname' ]
-                last = line[ 'lastname' ] 
-                username = line[ 'username' ]
+        students = []
+        pkMax = Student.objects.last().pk
 
-                emails.append(email)
+        #loop over the lines and save them in db. If error , store as string and then display
+        for line in reader: 
+            print(line)
 
-                #issue the next valid primary key
-                pkMax += 1
-                primKey = pkMax
+            #for now, assuming this is in order
+            email = line[ 'email' ]
+            first = line[ 'firstname' ]
+            last = line[ 'lastname' ] 
+            username = line[ 'username' ]
 
-                #make the student object
-                student = Student(pk=primKey, email=email, first_name=first, last_name=last, username=username, id_token="", is_professor='f')
-                students.append(student);
+            emails.append(email)
 
-            Student.objects.bulk_create(students, ignore_conflicts=True)
+            #issue the next valid primary key
+            pkMax += 1
+            primKey = pkMax
+
+            #make the student object
+            student = Student(pk=primKey, email=email, first_name=first, last_name=last, username=username, id_token="", is_professor='f')
+            students.append(student);
+
+        Student.objects.bulk_create(students, ignore_conflicts=True)
 
         #Students are created, let's make the student course pairs
         #first, clear out the old mappings
