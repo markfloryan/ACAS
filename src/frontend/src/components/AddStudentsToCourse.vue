@@ -7,6 +7,7 @@
   -->
   <div class="add-students">
       <CourseRosterUpload :courseId="courseId" />
+      <br>
       <div class="rostered-students">
         <sui-table v-if="newStudents.length > 0" celled>
           <sui-table-header>
