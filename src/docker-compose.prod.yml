@@ -1,0 +1,97 @@
+version: '3.4'
+
+services:
+  db:
+    image: postgres
+    container_name: 'db'
+    environment:
+      POSTGRES_PASSWORD: F3AoAmWH62GFfFDRejXBh*TVnoJPECMCZHM
+    networks:
+      - database_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+
+  nginx:
+    image: nginx
+    container_name: 'nginx'
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - ./certificate_data/certbot/conf:/etc/letsencrypt
+      - ./certificate_data/certbot/www:/var/www/cerbot
+      - ./entrypoint:/temp
+      - static_volume:/static
+    networks:
+      - nginx_network
+    depends_on:
+      - backend
+      - frontend
+    env_file:
+      - ./config/deployment_vars
+    entrypoint: /temp/nginx-entrypoint.sh
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  
+  certbot:
+    image: certbot/certbot
+    container_name: 'certbot'
+    volumes:
+      - ./certificate_data/certbot/conf:/etc/letsencrypt
+      - ./certificate_data/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+  backend:
+    build: ./backend
+    container_name: 'backend'
+    volumes:
+      - static_volume:/static
+    depends_on:
+      - db
+    networks:
+      - nginx_network
+      - database_network
+    environment:
+      - DEBUG=False
+    env_file:
+      - ./config/deployment_vars
+    command: >
+        bash -c "python manage.py makemigrations sptApp
+        && python manage.py migrate sptApp
+        && python manage.py makemigrations
+        && python manage.py migrate
+        && python manage.py collectstatic --no-input
+        && mkdir -p /static/static
+        && cp -r /static/admin /static/static/
+        && gunicorn --bind :8000 spt.wsgi:application"
+  
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      target: prod
+    container_name: 'frontend'
+    user: 'root'
+    volumes:
+      - static_volume:/static
+    depends_on:
+      - backend
+    networks:
+      - nginx_network
+    environment:
+      - NODE_ENV=production
+    command: >
+        bash -c "
+        cp /app/dist/index.html /static
+        && cp -r /app/dist/* /static"
+
+networks:
+  nginx_network:
+    driver: bridge
+  database_network:
+    driver: bridge
+
+volumes:
+  static_volume:
+  postgres_data:
+    external: true

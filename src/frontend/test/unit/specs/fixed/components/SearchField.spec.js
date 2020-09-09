@@ -1,0 +1,50 @@
+// As of 2/3/19, testing this file adds nothing to coverage
+import { mount, createLocalVue } from '@vue/test-utils';
+import Vuex from 'vuex';
+import SearchField from '@/components/SearchField';
+import toastStore from '@/vuex/modules/Toast';
+import settingsStore from '@/vuex/modules/Settings';
+import SuiVue from 'semantic-ui-vue';
+import 'semantic-ui-css/semantic.min.css';
+
+import moxios from 'moxios';
+
+const localVue = createLocalVue();
+localVue.use(Vuex);
+localVue.use(SuiVue);
+
+describe('SearchField.vue', () => {
+  let store;
+  let wrapper;
+
+  afterEach(() => {
+    // import and pass your custom axios instance to this method
+    moxios.uninstall();
+  });
+  // Resets the store for each test
+  beforeEach(() => {
+    moxios.install();
+    store = new Vuex.Store({
+      modules: {
+        toast: toastStore,
+        settings: settingsStore
+      },
+    });
+    wrapper = mount(SearchField, {
+      propsData: {
+      },
+      store,
+      localVue,
+      components: {
+      }
+    });
+  });
+
+  it('SearchField: Clicking the search icon emits the search function', () => {
+    const searchIconButton = wrapper.find('.search-icon');
+    searchIconButton.trigger('click');
+    // assert event has been emitted
+    expect(wrapper.emitted()['pass-data'].length).to.equal(1);
+  });
+
+});

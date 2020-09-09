@@ -1,0 +1,28 @@
+version: '2.0'
+
+services:
+  db:
+    image: postgres
+    container_name: 'db'
+    environment:
+      POSTGRES_PASSWORD: F3AoAmWH62GFfFDRejXBh*TVnoJPECMCZHM
+  backend:
+    build: ./backend
+    container_name: 'backend'
+    volumes:
+      - ./backend:/code
+    ports:
+      - '8000:8000'
+      - '5432:5432'
+    environment:
+      - DEBUG=True
+      - DOMAIN=spt-acas.com
+    links:
+      - db:the_db
+    command: >
+        bash -c "python manage.py makemigrations sptApp
+        && python manage.py migrate sptApp
+        && python manage.py makemigrations
+        && python manage.py migrate
+        && coverage run manage.py test
+        && coverage report"

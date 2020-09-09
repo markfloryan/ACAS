@@ -1,0 +1,13 @@
+2,0,1,1
+0,0
+What is the Big O runtime of deleting an arbitrary element from a linked list?,O(n),O(1),O(n^2),O(42)
+0,3
+Which is not a type of linked list?,Simple Linked List, Doubly Linked List, Circular Linked List, Magic Linked List
+0,2
+When an element is inserted into a linked list\, where is it placed?,The middle of the list,The end of the list,The beginning of the list,Before the head of the list
+2,0,1,4
+Select all valid linked list operations,Insert,Delete,Pop,Cascade,Search
+2,2,3
+Select all true statements,The head of a linked list always NULL,Singly linked list nodes contain two pointers,A doubly linked list can be reversed in constant time,Floryan rocks
+3,,,0,0 1,0 1,0 1 2 3
+Create a singly linked list node,,class Node {,public:,int data;,Node* next;,};

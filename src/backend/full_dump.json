@@ -1,0 +1,240 @@
+[
+{
+  "model": "sptApp.student",
+  "pk": 99,
+  "fields": {
+    "password": "pw",
+    "last_login": null,
+    "is_superuser": false,
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2020-03-22T20:55:21.474",
+    "first_name": "Jonny",
+    "last_name": "Studential",
+    "email": "jsnow@virginia.edu",
+    "join_date": "2020-03-30T03:08:02.734",
+    "id_token": "54321",
+    "is_professor": false,
+    "username": "jsnow",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "sptApp.student",
+  "pk": 100,
+  "fields": {
+    "password": "pw",
+    "last_login": null,
+    "is_superuser": true,
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2020-03-22T20:55:21.467",
+    "first_name": "Mark",
+    "last_name": "Floryan",
+    "email": "mrf8t@virginia.edu",
+    "join_date": "2020-03-30T02:46:40.347",
+    "id_token": "12345",
+    "is_professor": true,
+    "username": "mrf8t",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "sptApp.student",
+  "pk": 101,
+  "fields": {
+    "password": "pbkdf2_sha256$150000$k9lcixy52i0v$tv35oqQvnZR+Q4sS71+KwYRbXlsUiqn+VuDNiWqtaZA=",
+    "last_login": "2020-03-23T16:09:16.865",
+    "is_superuser": true,
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2020-02-28T18:17:42.536",
+    "first_name": "connor",
+    "last_name": "connor",
+    "email": "connor@connor.connor",
+    "join_date": "2020-02-28T18:17:42.829",
+    "id_token": null,
+    "is_professor": null,
+    "username": "connor",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "sptApp.course",
+  "pk": 2,
+  "fields": {
+    "name": "Sample Course",
+    "course_code": "101",
+    "subject_code": "CS",
+    "professor": 100,
+    "teaching_assistants": []
+  }
+},
+{
+  "model": "sptApp.studenttocourse",
+  "pk": 3,
+  "fields": {
+    "student": 100,
+    "course": 2,
+    "semester": null,
+    "grade": 0.0
+  }
+},
+{
+  "model": "sptApp.studenttocourse",
+  "pk": 17,
+  "fields": {
+    "student": 99,
+    "course": 2,
+    "semester": null,
+    "grade": 0.0
+  }
+},
+{
+  "model": "sptApp.topic",
+  "pk": 2,
+  "fields": {
+    "name": "Sample Topic",
+    "course": 2,
+    "ancestor_weight": 0.0,
+    "locked": false
+  }
+},
+{
+  "model": "sptApp.category",
+  "pk": "External Site",
+  "fields": {}
+},
+{
+  "model": "sptApp.category",
+  "pk": "Homework",
+  "fields": {}
+},
+{
+  "model": "sptApp.category",
+  "pk": "Internal Quiz",
+  "fields": {}
+},
+{
+  "model": "sptApp.category",
+  "pk": "Other",
+  "fields": {}
+},
+{
+  "model": "sptApp.category",
+  "pk": "Quiz",
+  "fields": {}
+},
+{
+  "model": "sptApp.category",
+  "pk": "Test",
+  "fields": {}
+},
+{
+  "model": "sptApp.studenttotopic",
+  "pk": 3,
+  "fields": {
+    "course": 2,
+    "student": 100,
+    "topic": 2,
+    "competency": 0,
+    "grade": 0.0
+  }
+},
+{
+  "model": "sptApp.studenttotopic",
+  "pk": 17,
+  "fields": {
+    "course": 2,
+    "student": 99,
+    "topic": 2,
+    "competency": 0,
+    "grade": 0.0
+  }
+},
+{
+  "model": "sptApp.assignment",
+  "pk": 4,
+  "fields": {
+    "name": "Sample Assignment",
+    "topic": 2
+  }
+},
+{
+  "model": "sptApp.quiz",
+  "pk": 3,
+  "fields": {
+    "assignment": 4,
+    "pool": "{\"parsons\": 0, \"multiple_choice\": 4, \"select_all\": 0, \"free_response\": 0}",
+    "practice_mode": false,
+    "allow_submissions": true,
+    "next_open_date": "2020-03-30T02:59:42",
+    "next_close_date": "2020-03-30T02:59:42"
+  }
+},
+{
+  "model": "sptApp.quizquestion",
+  "pk": 4,
+  "fields": {
+    "quiz": 3,
+    "question_type": 0,
+    "answered_correct_count": 0,
+    "answered_total_count": 0,
+    "question_parameters": "{\"question\": \"What is a pointer?\", \"choices\": [\"A theoretical construct\", \"I don't want to talk about it\", \"int* var = &obj\"], \"answer\": 2}"
+  }
+},
+{
+  "model": "sptApp.quizquestion",
+  "pk": 5,
+  "fields": {
+    "quiz": 3,
+    "question_type": 0,
+    "answered_correct_count": 0,
+    "answered_total_count": 0,
+    "question_parameters": "{\"question\": \"How many coronaviruses does it take to end the world?\", \"choices\": [\"1\", \"Sorry, but I'm not shaking your hand\", \"I'm just trying to profit from toilet paper markups\", \"I miss you Thomas Jefferson :(\"], \"answer\": 2}"
+  }
+},
+{
+  "model": "sptApp.quizquestion",
+  "pk": 6,
+  "fields": {
+    "quiz": 3,
+    "question_type": 0,
+    "answered_correct_count": 0,
+    "answered_total_count": 0,
+    "question_parameters": "{\"question\": \"Which is correct?\", \"choices\": [\"a\", \"b\", \"c\", \"d\"], \"answer\": 2}"
+  }
+},
+{
+  "model": "sptApp.quizquestion",
+  "pk": 7,
+  "fields": {
+    "quiz": 3,
+    "question_type": 0,
+    "answered_correct_count": 0,
+    "answered_total_count": 0,
+    "question_parameters": "{\"question\": \"Which is correct?\", \"choices\": [\"a\", \"b\", \"c\", \"d\",\"e\",\"f\",\"g\",\"h\",\"i\",\"j\",\"k\"], \"answer\": 2}"
+  }
+},
+{
+  "model": "sptApp.settings",
+  "pk": 1,
+  "fields": {
+    "color": "#653294",
+    "nickname": "stuff",
+    "user": 100
+  }
+},
+{
+  "model": "sptApp.settings",
+  "pk": 2,
+  "fields": {
+    "color": "blue",
+    "nickname": null,
+    "user": 99
+  }
+}
+]

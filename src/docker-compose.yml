@@ -1,0 +1,56 @@
+version: '3.4'
+
+services:
+  db:
+    image: postgres
+    container_name: 'db'
+    environment:
+      POSTGRES_PASSWORD: F3AoAmWH62GFfFDRejXBh*TVnoJPECMCZHM
+    volumes:
+      - ./db:/var/lib/postgresql/data
+  backend:
+    build: ./backend
+    container_name: 'backend'
+    volumes:
+      - ./backend:/code
+    ports:
+      - '8000:8000'
+      - '5432:5432'
+    environment:
+      - DEBUG=True
+      - DOMAIN=spt-acas.com
+    links:
+      - db:the_db
+    depends_on:
+      - db
+    command: >
+        bash -c "python manage.py makemigrations sptApp
+        && python manage.py migrate sptApp
+        && python manage.py makemigrations
+        && python manage.py migrate
+        && python manage.py runserver 0.0.0.0:8000"
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      target: dev
+    container_name: 'frontend'
+    user: 'root'
+    links:
+      - backend:backend-api
+    volumes:
+      - ./frontend:/app
+    ports:
+      - '8080:8080'
+    depends_on:
+      - backend
+    command: >
+        sh -c '
+        if test -d node_modules;
+        then
+            echo node_modules_exists ;
+        else
+            cp -a /tmp/node_modules /app;
+        fi &&
+        npm start
+        '

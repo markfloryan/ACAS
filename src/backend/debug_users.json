@@ -1,0 +1,53 @@
+
+[
+    {
+        "model": "sptApp.student",
+        "pk": 100,
+        "fields": {
+            "first_name": "Mark",
+            "last_name": "Floryan",
+            "username": "mrf8t",
+            "password": "pw",
+            "is_superuser": "t",
+            "is_staff": "t",
+            "is_active": "t",
+            "id_token": 12345,
+            "is_professor": "t",
+            "email": "mrf8t@virginia.edu",
+            "join_date": "2019-5-31T22:51:18.137Z"
+        }
+    },
+    {
+        "model": "sptApp.student",
+        "pk": 99,
+        "fields": {
+            "first_name": "Jonny",
+            "last_name": "Studential",
+            "username": "jsnow",
+            "password": "pw",
+            "is_superuser": "f",
+            "is_staff": "f",
+            "is_active": "t",
+            "id_token": 54321,
+            "is_professor": "f",
+            "email": "jsnow@virginia.edu",
+            "join_date": "2019-5-31T22:51:18.137Z"
+        }
+    },
+    {
+        "model": "sptApp.settings",
+        "pk": 1,
+        "fields": {
+            "color": "red",
+            "user": 100
+        }
+    },
+    {
+        "model": "sptApp.settings",
+        "pk": 2,
+        "fields": {
+            "color": "blue",
+            "user": 99
+        }
+    }
+]

@@ -1,0 +1,92 @@
+Starting the system:
+-------------------
+
+sudo docker-compose -f docker-compose.prod.yml up
+
+
+
+
+
+VERY QUICK OVERVIEW OF SYSTEM FILES:
+
+FRONTEND:
+--------------
+
+pages/ and components/ are the folders that contain all of the UI (as .vue files). They are basically html/css stuff with some Javascript mixed in. I recommend quickly looking over a veu and veux tutorial. Veux, for example, adds a "store" which allows components to pass around global state (like the login data of the current user for example).
+
+router/index.js is a file that lists all of the URL patterns and which .vue file in the pages/ directory should be loaded when that URL is accessed.
+
+When we want to hit the backend API and request some data, we use axios.post() or axios.get(). See src/api/auth/createProfessor.js for an example.
+
+Axios is promised based. You can google and read all about that. src/veux/modules/Auth.js contains several examples. You will see this pattern a lot:
+
+axios.get(PARAMS).then(profile => { //CODE HERE })
+
+This sends off a request, and waits for the response. Once the server responds, the .then() piece executes. The profile is the response from the server that is sent into the code block that is specified.
+
+
+BACKEND:
+----------------
+
+When a request comes in, it will first hit Django's url router. This can be found in src/backend/spt/urls.py. That file maps all of the localhost:8000/api/xxxx urls to a function that gets invoked. The function is then meant to return JSON responses. These URLs can contain regular expression patterns as well.
+
+src/sptApp/api_views.py contains most of the functions that the urls map to. For each one, there is a GET, POST, etc. option depending on whether the request is a GET, POST, etc. request. These functions will all return some kind of response. Those responses are functions that can be found in src/sptApp/responses.py. Also look at src/sptApp/serializers.py for some code that turns objects on the backend into JSON for transmission.
+
+
+
+
+
+
+SOME GENERAL HELPFUL THINGS:
+
+
+Interacting with Database
+---------------------------------------
+
+
+To connect to the database, you'll need to use a command to connect to postgres within the docker container. The following command should connect you:
+
+sudo docker exec -tiu postgres src_db_1 psql
+
+This command below will select the database for the project (it is called 'postgres' which is a terrible name)
+
+\connect postgres
+
+This command will list the database tables within the system.
+
+\dt
+
+Some example queries are below for your reference. This is what I put into the DB as the dummmy user for the backdoor login.
+
+INSERT INTO "sptApp_student"
+(id, password, is_superuser, is_staff, is_active, first_name, last_name, email, id_token, is_professor, username, date_joined, join_date)
+VALUES
+(1, 'pw', 't', 't', 't', 'Mark', 'Floryan', 'mrf8t@virginia.edu', '12345', 't', 'mrf8t', '2019-5-31', '2019-5-31');
+
+
+INSERT INTO "sptApp_settings"
+(id, color, nickname, user_id)
+VALUES
+(1, 'Blue', 'Mark', 1);
+
+
+
+Interacting with the backend
+--------------------------------------
+
+Sometimes it is useful to manually send http messages to the backend server to make sure you are getting a valid response. If you don't know the difference between POST and GET requests, I would google that quickly and get a handle on it. 
+
+You can manually test hitting the backend API to see if backend functions are working by doing the following:
+
+
+For a GET request, just type the URL into a browser and the JSON response should appear in the browser window. Example:
+
+http://localhost:8000/api/settings/?id_token=12345
+
+
+For POST requests, you can't use the browser (easily) because the parameters to the api are embedded in the post data. You can use the curl command-line tool to simulate a POST request and see the response in your terminal. Here is an example:
+
+curl -i -X POST -H 'Content-Type: application/json' -d '{"isCreate": 'false', "token": "12345"}' http://localhost:8000/api/students/
+
+
+

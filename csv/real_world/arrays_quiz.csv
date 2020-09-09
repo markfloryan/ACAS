@@ -1,0 +1,7 @@
+1,0,1,1
+0,1
+The first index of an array in C++ is:,-1,0,1,2
+2,0,2,3
+Select all valid array declarations,int foo[5];,bool[4] foo;,int foo [5] = {16\,4\,3};,int array[];
+3,0 1,,0,0 1,0 1 2
+Calcualte the sum of an array,,int result=0;,for (n=0; n<5; n++){,result += foo[n];,}
