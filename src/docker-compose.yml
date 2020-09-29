@@ -4,6 +4,7 @@ services:
   db:
     image: postgres
     container_name: 'db'
+    restart: on-failure
     environment:
       POSTGRES_PASSWORD: F3AoAmWH62GFfFDRejXBh*TVnoJPECMCZHM
     volumes:
@@ -23,6 +24,7 @@ services:
       - db:the_db
     depends_on:
       - db
+    restart: on-failure
     command: >
         bash -c "python manage.py makemigrations sptApp
         && python manage.py migrate sptApp
