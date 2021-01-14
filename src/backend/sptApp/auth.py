@@ -14,7 +14,7 @@ STUD_DEBUG_TOKEN = '54321'
 try:
     CLIENT_ID = os.environ['CLIENT_ID']
 except:
-    CLIENT_ID = '216871405199-9f9ik1lpcnfqsrg28nkhmt2b94bpffti.apps.googleusercontent.com'
+    CLIENT_ID = '250281465409-v94enoqrc5p1gr7eic9fo54ss1oetjhe.apps.googleusercontent.com'
 
 def get_bearer_token(auth_str):
     if auth_str is None:

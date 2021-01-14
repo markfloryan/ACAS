@@ -5,7 +5,10 @@
     or edit the graph for the class
   -->
   <div class="dashboard">
-    <h2 class="title">Class - {{ classData.name ? classData.name : this.id }}</h2>
+    <!-- Course Selected -->
+    <h2 class="title">Class - {{ classData.name ? classData.name : this.id}}</h2>
+    
+    <!-- Top action buttons-->
     <div class="actions">
       <button
         v-if="isProfessor"
@@ -34,8 +37,11 @@
       <h3
         id="grade"
         v-if="this.totalgrade!=0"
-      >Grade: {{this.totalgrade}}</h3>
+      >Grade: {{this.totalgrade}}
+      </h3>
     </div>
+
+    <!-- Variable Content -->
     <Sidebar class="sidebar"/>
     <div class="content">
       <CourseRoster
@@ -48,9 +54,10 @@
         :courseId="id"
         @contextChange="changeContext"
       />
+      <!-- TODO: What does id="3" mean? Is it hardcoded? -->
       <ClassGraph
         :hidden="context !== 'classGraph'"
-        :id="3"
+        :id="3" 
         :role="isProfessor ? 'professor' : 'student'"
         :data="graphData"
         @onClose="retrieveClassGraph"

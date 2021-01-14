@@ -18,7 +18,7 @@ const actions = {
         callback: () => {
           gapi.auth2 // Note: apply_deployment_vars.sh will update the client_id when during the production docker build
             .init({  // The script will break if the client_id string is changed such that it is no longer on its own line.
-              client_id: '216871405199-9f9ik1lpcnfqsrg28nkhmt2b94bpffti.apps.googleusercontent.com', // You can change the string itself
+              client_id: '250281465409-v94enoqrc5p1gr7eic9fo54ss1oetjhe.apps.googleusercontent.com', // You can change the string itself
             }) // But do not put this closing curly brace and parenthesis on the same line as the client_id or else the production build will break
             .then(() => {
               resolve();
