@@ -74,6 +74,7 @@ export default {
 
       let nodeImage;
       nodes.forEach((node) => {
+        // TODO: node lock boolean is passed here
         nodeImage = generate_svg(SVG, node.topic.name, node.competency, node.topic.locked);
         node.shape = 'image';
         node.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(nodeImage);
@@ -121,6 +122,7 @@ export default {
         this.nodes = this.generate_custom_graph_markup(newData.nodes);
         this.options = options(this.layoutMethod);
       }
+      // TODO: Unlock nodes
       // builds the graph if the user is not a professor; only displays unlocked
       // topics
       else if(newData.edges && newData.nodes) {

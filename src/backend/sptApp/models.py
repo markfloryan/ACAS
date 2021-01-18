@@ -172,6 +172,7 @@ class StudentToCourse(models.Model):
     semester = models.CharField(max_length=250, null=True, blank=True)
 
     grade = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    letterGrade = models.CharField(max_length=2, default='?')
 
     def set_grade(self, val):
         grade = val

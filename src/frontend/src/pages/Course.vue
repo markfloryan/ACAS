@@ -37,7 +37,7 @@
       <h3
         id="grade"
         v-if="this.totalgrade!=0"
-      >Grade: {{this.totalgrade}}
+      >Topics Mastered: {{this.numNodesMastery}} | Topics Comp-ed: {{this.numNodesCompetency}} | Grade: {{this.totalgrade}}
       </h3>
     </div>
 
@@ -111,6 +111,8 @@ export default {
       isProfessor: false,
       numberofNodes: 0,
       totalgrade: 0,
+      numNodesCompetency: 0,
+      numNodesMastery: 0,
       file: '',
     };
   },
@@ -139,6 +141,7 @@ export default {
         .then(data => {
           this.classNotFound = false;
           let classData = data.data.result;
+          this.totalgrade = classData.grade;
           classData = {
             pk: classData.course.pk,
             name: classData.course.name,
@@ -147,7 +150,14 @@ export default {
             nodes: classData.nodes,
             edges: classData.edges,
           };
-          this.totalgrade = data.data.result.grade;
+          // Loop through all nodes and sum progress
+          classData.nodes.forEach((node) => {
+            if (node.competency == 1)
+              this.numNodesCompetency++;
+            if (node.competency == 2)
+              this.numNodesMastery++;
+            console.log(node.topic.name + ' : ' + node.competency);
+          });
           classData.nodes = classData.nodes.map(node => {
             return {
               ...node,

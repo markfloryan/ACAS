@@ -1,5 +1,8 @@
 # Notes:
-.vue files update live very quickly
+.vue files update live without need for refresh.
+
+# Questions:
+- What are credentials to REST query backend?
 
 # Issues:
 ## Small Tasks

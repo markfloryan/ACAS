@@ -1,19 +1,20 @@
 from .models import *
 
 # Determines the number grade given to students who acheive a given letter grade
+# TODO: dealing with raw numbers here is unimportant and should be removed
 letter_number_grade_tuples = [
-        ("a_plus", 100),
-        ("a", 95),
-        ("a_minus", 90),
-        ("b_plus", 88),
-        ("b", 85),
-        ("b_minus", 82),
-        ("c_plus", 78),
-        ("c", 75),
-        ("c_minus", 72),
-        ("d_plus", 68),
-        ("d", 65),
-        ("d_minus", 62),
+        ("a_plus", 100, "A+"),
+        ("a", 95, "A"),
+        ("a_minus", 90, "A-"),
+        ("b_plus", 88, "B+"),
+        ("b", 85, "B"),
+        ("b_minus", 82, "B-"),
+        ("c_plus", 78, "C+"),
+        ("c", 75, "C"),
+        ("c_minus", 72, "C-"),
+        ("d_plus", 68), "D+",
+        ("d", 65, "D"),
+        ("d_minus", 62, "D-"),
     ]
 
 # Check if a given grade (e.g. "a", or "a_plus") meets the grade threshold
@@ -60,6 +61,7 @@ def update_course_grade(student_pk=None, course_pk=None):
     for letter_number in letter_number_grade_tuples:
         if meets_grade_threshold(letter_number[0],grade_threshold,num_competent,num_mastery):
             grade = letter_number[1]
+            #letterGrade = letter_number[2]
             break
 
     try:
