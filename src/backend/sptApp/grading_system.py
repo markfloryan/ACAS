@@ -12,7 +12,7 @@ letter_number_grade_tuples = [
         ("c_plus", 78, "C+"),
         ("c", 75, "C"),
         ("c_minus", 72, "C-"),
-        ("d_plus", 68), "D+",
+        ("d_plus", 68, "D+"),
         ("d", 65, "D"),
         ("d_minus", 62, "D-"),
     ]
@@ -56,12 +56,13 @@ def update_course_grade(student_pk=None, course_pk=None):
 
     # If no grade criteria is met, the grade is 50
     grade = 50
+    letterGrade = '?'
 
     # Check if various grades are met, set them if so
     for letter_number in letter_number_grade_tuples:
         if meets_grade_threshold(letter_number[0],grade_threshold,num_competent,num_mastery):
             grade = letter_number[1]
-            #letterGrade = letter_number[2]
+            letterGrade = letter_number[2]
             break
 
     try:
@@ -70,6 +71,7 @@ def update_course_grade(student_pk=None, course_pk=None):
         print("No StudentToCourse for the given student and course")
         return
     student_to_course.grade = grade
+    student_to_course.letterGrade = letterGrade
     student_to_course.save()
 
 # Collect all student_to_assigment grades for a given topic and update the topic competency and grade for that student

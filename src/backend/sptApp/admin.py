@@ -42,7 +42,7 @@ class StudentToAssignmentAdmin(admin.ModelAdmin):
     list_filter = ('assignment',)
 
 class StudentToCourseAdmin(admin.ModelAdmin):
-    list_display = ['student','course','grade']
+    list_display = ['student','course','grade','letterGrade']
 
 class StudentToQuizQuestionAdmin(admin.ModelAdmin):
     list_display = ['student','quiz_question','correct','num_submissions']

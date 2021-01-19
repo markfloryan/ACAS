@@ -66,6 +66,7 @@ class TopicToTopicSerializer(SecureModelSerializer):
         fields = (
             'pk',
             'topic_node',
+            'topic_name',
             'course',
             'ancestor_node',
             'ancestor_name',
@@ -259,5 +260,6 @@ class ClassGraphSerializer(SecureModelSerializer):
             'nodes',
             'edges',
             'grade',
+            'letterGrade', # TODO: change serializer to update REST
         )
         depth = 2

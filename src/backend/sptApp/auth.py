@@ -6,7 +6,10 @@ import json
 import os
 from .models import Student
 
-API_DEBUG = (os.environ['DEBUG'] != 'False')
+try:
+    API_DEBUG = (os.environ['DEBUG'] != 'False')
+except:
+    API_DEBUG = False
 PROF_DEBUG_TOKEN = '12345'
 STUD_DEBUG_TOKEN = '54321'
 

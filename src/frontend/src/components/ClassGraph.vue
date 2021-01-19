@@ -135,6 +135,43 @@ export default {
         //     tempNodes.push(node)
         //   }
         // });
+        //this.nodes = this.generate_custom_graph_markup(newData.nodes);
+        
+        /*
+        newData.edges.forEach((edge) => {
+          console.log(JSON.stringify(edge, null,4));
+        });
+        newData.nodes.forEach((node) => {
+          console.log(JSON.stringify(node, null, 4));
+        }); */
+
+        // Todo: This is an n^2 algo. Does that matter?
+        // Setting up efficient maps would probably be just as slow for the size of trees we will be dealing with
+        function getAncestor(topic_id) {
+          let ret;
+          newData.edges.forEach((edge) => {
+            if (edge.topic_node == topic_id)
+              ret = edge.ancestor_node;
+          });
+          return ret;
+        }
+        function getCompetency(topic_id) {
+          let ret;
+          newData.nodes.forEach((node) => {
+            if (node.topic.id == topic_id)
+              ret = node.competency;
+          });
+          return ret;
+        }
+        newData.nodes.forEach((node) => {
+          let tID = node.topic.id;
+          let competency = getCompetency(getAncestor(tID));
+          console.log(node.topic.name + ' ' + competency);
+          node.topic.locked = node.topic.locked || (competency == 0);
+        });
+
+        
+
         this.nodes = this.generate_custom_graph_markup(newData.nodes.filter((node) => !node.topic.locked));
         this.options = options(this.layoutMethod);
       }

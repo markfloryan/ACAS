@@ -685,5 +685,8 @@ class TopicToTopic(models.Model):
     def __str__(self):
         return self.ancestor_node.__str__() + " -> " + self.topic_node.__str__()
 
+    def topic_name(self):
+        return self.topic_node.name
+
     def ancestor_name(self):
         return self.ancestor_node.name
