@@ -36,8 +36,8 @@
       >Back to graph</button>
       <h3
         id="grade"
-        v-if="this.totalgrade!=0"
-      >Grade: {{this.totalgrade}} | Letter: {{this.letterGrade}}
+        v-if="!isProfessor"
+      >Grade: {{this.letterGrade}}
       </h3>
     </div>
 
