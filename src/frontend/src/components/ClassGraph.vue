@@ -147,27 +147,31 @@ export default {
 
         // Todo: This is an n^2 algo. Does that matter?
         // Setting up efficient maps would probably be just as slow for the size of trees we will be dealing with
-        function getAncestor(topic_id) {
-          let ret;
+        function getAncestors(topic_id) {
+          let ret = [];
           newData.edges.forEach((edge) => {
             if (edge.topic_node == topic_id)
-              ret = edge.ancestor_node;
+              ret.push(edge.ancestor_node);
           });
           return ret;
         }
-        function getCompetency(topic_id) {
-          let ret;
-          newData.nodes.forEach((node) => {
-            if (node.topic.id == topic_id)
-              ret = node.competency;
+        function getCompetencies(topic_ids) {
+          let ret = [];
+          topic_ids.forEach((id) => {
+            newData.nodes.forEach((node) => {
+              if (node.topic.id == id)
+                ret.push(node.competency);
+            });
           });
           return ret;
         }
         newData.nodes.forEach((node) => {
           let tID = node.topic.id;
-          let competency = getCompetency(getAncestor(tID));
-          console.log(node.topic.name + ' ' + competency);
-          node.topic.locked = node.topic.locked || (competency == 0);
+          let competencies = getCompetencies(getAncestors(tID));
+          console.log(node.topic.name + ' ' + competencies);
+          competencies.forEach((competency) => {
+            node.topic.locked = node.topic.locked || (competency == 0);
+          });
         });
 
         
