@@ -62,7 +62,7 @@ class TopicAdmin(admin.ModelAdmin):
     list_display = ['name','course','locked']
 
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['email','first_name','last_name','is_professor']
+    list_display = ['email','first_name','last_name','username','is_professor']
 
 admin.site.register(Assignment, AssignmentAdmin)
 admin.site.register(CompetencyThreshold, CompetencyThresholdAdmin)

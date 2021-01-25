@@ -14,6 +14,12 @@
         v-if="isProfessor"
         class="btn btn-plain edit-btn"
         style="margin-left: 8pt;"
+        @click="pullGrades()"
+      >Update grades</button>
+      <button
+        v-if="isProfessor"
+        class="btn btn-plain edit-btn"
+        style="margin-left: 8pt;"
         @click="toEdit()"
       >Edit graph</button>
       <button
@@ -176,6 +182,30 @@ export default {
     toEdit() {
       this.$router.push({ name: 'Edit', params: { id: this.id } });
     },
+    pullGrades() {
+      let cnum = 225965;
+      let url = `https://www.gradescope.com/courses/${cnum}`;
+      //let newWindow = open(`https://www.gradescope.com/courses/${cnum}`, 'example', 'width=1000,height=700')
+      //newWindow.focus();
+      //console.log(newWindow.document.textContent);
+      
+      let request = new XMLHttpRequest();
+      /*request.addEventListener("load", function(evt){
+          console.log(evt);
+      }, false);
+      */
+     
+      request.open('GET', url, true);
+      request.send();
+      //console.log('Response: \n' + request.responseText);
+
+      //$.get(url, function(data, status){
+      //    console.log(`${data}`);
+      //});
+
+      //console.log(axios.get('google.com', { headers: { } }));
+    },
+    
     ...mapMutations(
       'toast',
       ['openToast', 'setToastInfo'],
