@@ -1,0 +1,3 @@
+[submodule "src/gradescope-api"]
+	path = src/gradescope-api
+	url = https://github.com/dwp7kp/gradescope-api.git
