@@ -38,12 +38,62 @@ def meets_grade_threshold(grade,grade_threshold,num_competent,num_mastery):
 def update_course_grade(student_pk=None, course_pk=None):
     student_to_topics = StudentToTopic.objects.filter(student=student_pk, course=course_pk)
     course = Course.objects.get(pk=course_pk)
+    
+    topic_to_topic = TopicToTopic.objects.filter(course=course_pk)
+
+    
+    # Temp Lock Nodes to avoid grading potentially locked nodes
+    def getAncestors(topic_id):
+        ret = []
+        for ttt in topic_to_topic:
+            if ttt.topic_node.id == topic_id:
+                ret.append(ttt.ancestor_node.id)
+        return ret
+    def getChildren(topic_id):
+        ret = []
+        for ttt in topic_to_topic:
+            if ttt.ancestor_node.id == topic_id:
+                ret.append(ttt.topic_node.id)
+        return ret
+    def getNode(topic_id):
+        ret = None
+        for stt in student_to_topics:
+            if stt.topic.id == topic_id:
+                ret = stt
+        return ret
+    def resolveLock(parent_id, children_ids):
+        parent_node = getNode(parent_id)
+        for child_id in children_ids:
+            child_node = getNode(child_id)
+            child_node.topic.locked = child_node.topic.locked or parent_node.topic.locked or (parent_node.competency == 0)
+    
+
+    # Get root
+    root_node = student_to_topics[0].topic.id
+    ancestors = getAncestors(root_node)
+    while len(ancestors) > 0:
+        root_node = ancestors[0]
+        ancestors = getAncestors(root_node)
+    
+    # Trickle down lock the tree
+    nodes = [root_node]
+    i = 0
+    while i < len(nodes):
+        children = getChildren(nodes[i])
+        resolveLock(nodes[i], children)
+        for child in children:
+            nodes.append(child)
+        i+=1
+    
 
     # Initialize variables to track the number of competent and mastered topics
     num_competent = 0
     num_mastery = 0
 
     for stt in student_to_topics:
+        if stt.topic.locked:
+            print('skipping locked node')
+            continue
         if stt.competency == 1: # If competent
             num_competent += 1
         elif stt.competency == 2: # If mastery

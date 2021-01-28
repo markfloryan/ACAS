@@ -30,6 +30,7 @@ import { Network } from 'vue2vis';
 import { generate_svg } from '@/assets/graph_node_svg.js';
 import { edges, nodes as nodeData, options } from '@/assets/test_graph_data.js';
 import TopicModal from '@/components/TopicModal';
+import { lockTree } from '@/components/NodeLock';
 
 export default {
   components: {
@@ -123,8 +124,7 @@ export default {
         this.options = options(this.layoutMethod);
       }
       // TODO: Unlock nodes
-      // builds the graph if the user is not a professor; only displays unlocked
-      // topics
+      // builds the graph if the user is not a professor; displays all nodes
       else if(newData.edges && newData.nodes) {
         this.edges = newData.edges.map((edge) => {
           return { from: edge.ancestor_node, to: edge.topic_node};
@@ -145,38 +145,11 @@ export default {
           console.log(JSON.stringify(node, null, 4));
         }); */
 
-        // Todo: This is an n^2 algo. Does that matter?
-        // Setting up efficient maps would probably be just as slow for the size of trees we will be dealing with
-        function getAncestors(topic_id) {
-          let ret = [];
-          newData.edges.forEach((edge) => {
-            if (edge.topic_node == topic_id)
-              ret.push(edge.ancestor_node);
-          });
-          return ret;
-        }
-        function getCompetencies(topic_ids) {
-          let ret = [];
-          topic_ids.forEach((id) => {
-            newData.nodes.forEach((node) => {
-              if (node.topic.id == id)
-                ret.push(node.competency);
-            });
-          });
-          return ret;
-        }
-        newData.nodes.forEach((node) => {
-          let tID = node.topic.id;
-          let competencies = getCompetencies(getAncestors(tID));
-          console.log(node.topic.name + ' ' + competencies);
-          competencies.forEach((competency) => {
-            node.topic.locked = node.topic.locked || (competency == 0);
-          });
-        });
+        lockTree(newData);
 
+        this.nodes = this.generate_custom_graph_markup(newData.nodes);
         
-
-        this.nodes = this.generate_custom_graph_markup(newData.nodes.filter((node) => !node.topic.locked));
+        //this.nodes = this.generate_custom_graph_markup(newData.nodes.filter((node) => !node.topic.locked));
         this.options = options(this.layoutMethod);
       }
     }

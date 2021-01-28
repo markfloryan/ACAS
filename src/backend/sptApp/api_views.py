@@ -56,6 +56,9 @@ from .models import *
 from .responses import *
 from .serializers import *
 
+# GradeScope
+from sptApp.gradescopeAPI.pyscope.pyscope import *
+
 
 ''' API ENDPOINTS '''
 
@@ -1974,6 +1977,75 @@ def courseGradesUpload(request,pk):
             'errors': errors
         })
 
+####
+####
+####
+
+
+'''
+__________________________________________________  Get
+    url: GET :: <WEBSITE>/api/courseGradescopeUpload/
+    function: Fetches corresponding GradeScope data and uploads it
+__________________________________________________
+'''
+@csrf_exempt
+@api_view(['GET'])
+#@authentication_classes([GoogleOAuth])
+#@permission_classes([IsAuthenticated & IsProfessor])
+def courseGradescopeUpload(request,pk):
+    
+    course = None
+    try:
+        course = Course.objects.get(pk=pk)
+    except Course.DoesNotExist:
+        return JsonResponse({
+            'ok':False,
+            'errors':['Could not find course with primary key {}'.format(pk)]
+        })
+
+        print('\n-\n-\n-\n-\n-\n-\n-\n-')
+
+    conn = GSConnection()
+    
+    print(conn.state)
+    conn.get_account()
+
+    grades = None
+    for cnum in conn.account.instructor_courses:
+        gs_course = conn.account.instructor_courses[cnum]
+
+        if gs_course.name != course.name:
+            shortname = course.subject_code + ' ' + course.course_code
+            if gs_course.shortname != shortname:
+                continue
+
+        print(str(gs_course))
+        gs_course._force_load_data()
+        print(gs_course.get_grades())
+
+        grades = gs_course.get_grades()
+
+
+
+    errors = []
+
+    ## Make call with new csv
+    #url = API_URL
+
+    if len(errors) == 0:
+        return JsonResponse({
+            'response':gs_course.get_grades()
+        })
+    else:
+        #print(str(errors))
+        return JsonResponse({
+            'ok': False,
+            'errors': errors
+        })
+
+####
+####
+####
 
 #Assignment uploading feature
 #/api/courseAssignmentUpload/<pk>

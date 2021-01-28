@@ -45,8 +45,8 @@ export const generate_svg = (svg, title, competency, lock) => {
 
   //Change the display if settings are locked.
   if (lock) {
-    status = 'Locked';
-    competencyMessage = '';
+    status = '';
+    competencyMessage = 'Locked';
     color = 'none';
   }
   //Truncate long titles.
