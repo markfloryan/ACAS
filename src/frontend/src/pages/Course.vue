@@ -208,27 +208,51 @@ export default {
       this.$router.push({ name: 'Edit', params: { id: this.id } });
     },
     pullGrades() {
-      let cnum = 225965;
-      let url = `https://www.gradescope.com/courses/${cnum}`;
-      //let newWindow = open(`https://www.gradescope.com/courses/${cnum}`, 'example', 'width=1000,height=700')
-      //newWindow.focus();
-      //console.log(newWindow.document.textContent);
+      let localID = this.profile.id_token;
+      let coursePK = this.id;
+      axios
+        .get( `${API_URL}/courseGradescopeUpload/${coursePK}`,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.ok) {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Pull',
+              message: 'Grades added to gradebook',
+              duration: 5000,
+            });
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Pulling Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        /*
+        setTimeout(function(){ 
+          openToast();
+          this.setToastInfo({
+            type: 'error',
+            title: 'Uploading Error',
+            message: `${response.data.errors[1]}`,
+            duration: 6000,
+        }); }, 6000);*/
+          //}
       
-      let request = new XMLHttpRequest();
-      /*request.addEventListener("load", function(evt){
-          console.log(evt);
-      }, false);
-      */
-     
-      request.open('GET', url, true);
-      request.send();
-      //console.log('Response: \n' + request.responseText);
-
-      //$.get(url, function(data, status){
-      //    console.log(`${data}`);
-      //});
-
-      //console.log(axios.get('google.com', { headers: { } }));
+        })
+        .catch(function(){
+          console.log(`${API_URL}/courseGradesUpload/${coursePK}`);
+          console.log('FAILURE');
+        });
     },
     
     ...mapMutations(

@@ -1977,11 +1977,6 @@ def courseGradesUpload(request,pk):
             'errors': errors
         })
 
-####
-####
-####
-
-
 '''
 __________________________________________________  Get
     url: GET :: <WEBSITE>/api/courseGradescopeUpload/
@@ -1990,10 +1985,10 @@ __________________________________________________
 '''
 @csrf_exempt
 @api_view(['GET'])
-#@authentication_classes([GoogleOAuth])
-#@permission_classes([IsAuthenticated & IsProfessor])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated & IsProfessor])
 def courseGradescopeUpload(request,pk):
-    
+
     course = None
     try:
         course = Course.objects.get(pk=pk)
@@ -2003,10 +1998,9 @@ def courseGradescopeUpload(request,pk):
             'errors':['Could not find course with primary key {}'.format(pk)]
         })
 
-        print('\n-\n-\n-\n-\n-\n-\n-\n-')
-
     conn = GSConnection()
-    
+    conn.login('email', 'pass')
+
     print(conn.state)
     conn.get_account()
 
@@ -2021,31 +2015,22 @@ def courseGradescopeUpload(request,pk):
 
         print(str(gs_course))
         gs_course._force_load_data()
-        print(gs_course.get_grades())
-
         grades = gs_course.get_grades()
 
+    ## Make post request with new csv
+    # TODO: hardcoded url
+    url = 'http://localhost:8000/api/courseGradesUpload/' + pk
+    
+    with open('gradescopeUpload.csv','w+') as f:
+        f.write(grades)
+        f.flush()
+        f.seek(0)
+        headers = {'Authorization' : request.headers['Authorization']}
+        r = requests.post(url, headers=headers, files = {'csv': ('grades.csv', f, 'text/csv', {'Expires': '0'})})
+    return JsonResponse({
+        'ok': r.text
+    })
 
-
-    errors = []
-
-    ## Make call with new csv
-    #url = API_URL
-
-    if len(errors) == 0:
-        return JsonResponse({
-            'response':gs_course.get_grades()
-        })
-    else:
-        #print(str(errors))
-        return JsonResponse({
-            'ok': False,
-            'errors': errors
-        })
-
-####
-####
-####
 
 #Assignment uploading feature
 #/api/courseAssignmentUpload/<pk>
