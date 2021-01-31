@@ -1,4 +1,5 @@
 
-[submodule "src/backend/sptApp/gradescope-api"]
-	path = src/backend/sptApp/gradescope-api
-	url = https://github.com/dwp7kp/gradescope-api.git
+
+[submodule "src/backend/sptApp/gradescopeAPI"]
+	path = src/backend/sptApp/gradescopeAPI
+	url = https://github.com/dwp7kp/gradescopeAPI.git
