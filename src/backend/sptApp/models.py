@@ -96,6 +96,7 @@ class Student(AbstractUser):
 
     is_professor = models.BooleanField(default=False)
 
+    # TODO: Username is not just used for superuser. It is included in the CSV uploads
     # For creating a superuser
     username = models.CharField(blank=True, null=True, max_length=150)
     password = models.CharField(_('password'), max_length=128, blank=True, null=True)

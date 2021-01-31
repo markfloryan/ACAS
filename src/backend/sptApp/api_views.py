@@ -297,8 +297,10 @@ class StudentViewSet(viewsets.ModelViewSet):
                 'last_name': fullProfile.get('family_name'),
                 'email': fullProfile.get('email'),
                 'id_token': params['id_token'],
-                'is_professor': 'f'
+                'is_professor': 'f',
+                'username': fullProfile.get('email') # TODO: Temp username fix
             }
+            print(data['username'])
 
         #If the id_token was bad and did not create a profile for us, return an error
         if data['email'] is None:
@@ -1999,8 +2001,7 @@ def courseGradescopeUpload(request,pk):
         })
 
     conn = GSConnection()
-    conn.login('email', 'pass')
-
+    #conn.login('email', 'pass')
     print(conn.state)
     conn.get_account()
 

@@ -39,7 +39,9 @@ class ResourcesAdmin(admin.ModelAdmin):
 
 class StudentToAssignmentAdmin(admin.ModelAdmin):
     list_display = ['student', 'assignment', 'grade', associated_course]
-    list_filter = ('assignment__topic__course__name','assignment',)
+    #list_filter = ('assignment__topic__course__name','assignment',)
+    #search_fields = ['assignment__name','assignment__topic__name','assignment__name','student__email','student__first_name','student__last_name']
+
 
 class StudentToCourseAdmin(admin.ModelAdmin):
     list_display = ['student','course','letterGrade']

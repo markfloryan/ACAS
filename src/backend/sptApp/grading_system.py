@@ -39,10 +39,9 @@ def update_course_grade(student_pk=None, course_pk=None):
     student_to_topics = StudentToTopic.objects.filter(student=student_pk, course=course_pk)
     course = Course.objects.get(pk=course_pk)
     
+    # Temp Lock Nodes to avoid grading potentially locked nodes
     topic_to_topic = TopicToTopic.objects.filter(course=course_pk)
 
-    
-    # Temp Lock Nodes to avoid grading potentially locked nodes
     def getAncestors(topic_id):
         ret = []
         for ttt in topic_to_topic:
@@ -68,7 +67,7 @@ def update_course_grade(student_pk=None, course_pk=None):
             child_node.topic.locked = child_node.topic.locked or parent_node.topic.locked or (parent_node.competency == 0)
     
 
-    # Get root
+    # Get root TODO: Multiple root handling
     root_node = student_to_topics[0].topic.id
     ancestors = getAncestors(root_node)
     while len(ancestors) > 0:
@@ -137,6 +136,7 @@ def update_topic_grade(student_pk=None, topic_pk=None):
             return
         student_to_topic.competency = 0
         student_to_topic.grade = 0
+
         student_to_topic.save()
 
         update_course_grade(student_pk, student_to_topic.course.pk)
@@ -147,9 +147,15 @@ def update_topic_grade(student_pk=None, topic_pk=None):
     sum_assignment_weights = 0
     sum_grades = 0.0
 
+    # Sums students grades
     for sta in student_to_assignments:
         sum_grades += sta.grade * sta.assignment.weight # Add grade while taking into account the wight
-        sum_assignment_weights += sta.assignment.weight
+        #sum_assignment_weights += sta.assignment.weight
+
+    # Sums the weight of assignments even if the student doens't have a grade
+    topic_assignments = Assignment.objects.filter(topic=topic_pk)
+    for ta in topic_assignments:
+        sum_assignment_weights += ta.weight
 
     avg_grade = sum_grades / sum_assignment_weights
 

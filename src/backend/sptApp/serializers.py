@@ -84,7 +84,8 @@ class StudentSerializer(serializers.ModelSerializer):
             'email',
             'id_token',
             'is_professor',
-            'join_date'
+            'join_date',
+            'username'
         )
 
 
