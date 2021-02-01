@@ -46,6 +46,7 @@
         data-toggle="tooltip"
         data-placement="bottom"
         :title="'Nodes at mastery: ' + this.numNodesMast + ' | competency: ' + this.numNodesComp"
+        @click="clickGradeModal('TODO:')"
       >Grade: {{this.letterGrade}}
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
         <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
@@ -82,6 +83,11 @@
       >No class graph found :(</h1>
       <LoadingLayer v-if="isLoading" :message="'Fetching course...'"/>
     </div>
+    <CourseGradeModal
+      :isOpen="courseGradeModalIsOpen"
+      :role="role"
+      :data="classData"
+      @onClose="courseGradeModalIsOpen = false; $emit('onClose');" />
   </div>
 </template>
 
@@ -97,6 +103,7 @@ import LoadingLayer from '@/components/LoadingLayer';
 import Sidebar from '@/components/Sidebar';
 import { API_URL } from '@/constants';
 import { lockTree } from '@/components/NodeLock';
+import CourseGradeModal from '@/components/CourseGradeModal';
 
 export default {
   name: 'Course',
@@ -106,12 +113,16 @@ export default {
     ClassGraph,
     LoadingLayer,
     Sidebar,
+    CourseGradeModal,
   },
   props: {
     id: {
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -126,12 +137,13 @@ export default {
       isLoading: false,
       isProfessor: false,
       numberofNodes: 0,
-      totalgrade: 0,
+      totalgrade: 0, // TODO: Deprecated use of grade % not letter grade
       letterGrade: '?',
       numNodesMast: 0,
       numNodesComp: 0,
       numNodesLocked: 0,
       file: '',
+      courseGradeModalIsOpen: false,
     };
   },
   created() {
@@ -253,6 +265,9 @@ export default {
           console.log(`${API_URL}/courseGradesUpload/${coursePK}`);
           console.log('FAILURE');
         });
+    },
+    clickGradeModal(data) {
+      this.courseGradeModalIsOpen = true;
     },
     
     ...mapMutations(
