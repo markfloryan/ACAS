@@ -28,7 +28,8 @@ export function getChildren(tree, topic_id) {
 }*/
 export function getNode(tree, topic_id) {
   let ret = null;
-  tree.nodes.forEach((node) => { 
+  tree.nodes.forEach((node) => {
+    //console.log(topic_id + ' ' + node.topic.id);
     if (node.topic.id == topic_id)
       ret = node;
   });
@@ -36,9 +37,17 @@ export function getNode(tree, topic_id) {
 }
 export function resolveLock(tree, parent_id, children_ids) {
   let parent_node = getNode(tree, parent_id);
+  if (parent_node == null) {
+    console.log('parent_node was null: ' + parent_id);
+    return;
+  }
   children_ids.forEach((child_id)=> {
     let child_node = getNode(tree, child_id);
-    child_node.topic.locked = child_node.topic.locked || parent_node.topic.locked || (parent_node.competency == 0);
+    if (child_node != null) {
+      child_node.topic.locked = child_node.topic.locked || parent_node.topic.locked || (parent_node.competency == 0);
+    } else {
+      console.log('Childnode was null: ' + child_id);
+    }
   });
 }
 

@@ -5,72 +5,49 @@
     <div class="content" style="margin-top: 8pt; overflow-y: scroll">
       <h2 class="title">{{ pageTitle }} Grading Info</h2>
       <sui-icon @click="closeModal()" name="close icon" class="close-modal-button"/>
-      <!-- take out extraneous code later -->
-      <template v-if="true">
-        <div class="tab-nav">
-          <span
-            class="link"
-            @click="context = 'overview'"
-            :style="{ color: context === 'overview' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
-          >Overview</span>
+      <div class="tab-nav">
+        <span
+          class="link"
+          @click="context = 'overview'"
+          :style="{ color: context === 'overview' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
+        >Overview</span>
+    
+        <span
+          class="link"
+          @click="context = 'progress'"
+          :style="{ color: context === 'progress' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
+        >Progress</span>
+        <!-- Only show for professor -->
+        <span
+          v-if="role === 'professor'"
+          class="link"
+          @click="context = 'edit_grading_scale'"
+          :style="{ color: context === 'edit_grading_scale' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
+        >Edit Grading Scale</span>
+      </div>
       
-          <span
-            class="link"
-            @click="context = 'progress'"
-            :style="{ color: context === 'progress' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
-          >Progress</span>
-          <!-- Only show for professor -->
-          <span
-            v-if="role === 'professor'"
-            class="link"
-            @click="context = 'edit_grading_scale'"
-            :style="{ color: context === 'edit_grading_scale' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
-          >Edit Grading Scale</span>
-        </div>
-        <!--
-        <div class="main">
-          <Resources
-            v-if="context === 'resources'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-          <TopicSettings
-            v-if="context === 'topic_settings'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-          <TopicAddGrade
-            v-if="context === 'topic_add_grade'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-          <TopicStudentGrades
-            v-if="context === 'update_student_grades'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-          <!-- Switch to student grade component
-          <TopicStudentGrade
-            v-if="context === 'studentgrades'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-          <TopicTakeQuiz
-            v-if="context === 'take_quiz'"
-            :role="role"
-            :data="data"
-            :topicId="data.topic.id"
-          />
-        </div>
-        -->
-      </template>
-      <div v-else>
-        <h2>Unreachable</h2>
+      <div class="main">
+        <CourseGradeOverview
+          v-if="context === 'overview'"
+          :role="role"
+          :data="data"
+          :id="id"
+          :letterGrade="letterGrade"
+          :numNodesMast="numNodesMast"
+          :numNodesComp="numNodesComp"
+        />
+        <CourseGradeProgress
+          v-if="context === 'progress'"
+          :role="role"
+          :data="data"
+          :id="id"
+        />
+        <CourseGradeEditScale
+          v-if="context === 'edit_grading_scale'"
+          :role="role"
+          :data="data"
+          :id="id"
+        />
       </div>
     </div>
   </div>
@@ -78,22 +55,22 @@
 
 <script>
 import axios from 'axios';
-//import CourseGradeInfo from '@/components/CourseGradeInfo';
-//import CourseGradeProgress from '@/components/CourseGradeProgress';
-//import CourseGradeEditScale from '@/components/CourseGradeEditScale';
+import CourseGradeOverview from '@/components/CourseGradeOverview';
+import CourseGradeProgress from '@/components/CourseGradeProgress';
+import CourseGradeEditScale from '@/components/CourseGradeEditScale';
 
 import { API_URL } from '@/constants';
 
 export default {
   components: {
-    //CourseGradeInfo,
-    //CourseGradeProgress,
-    //CourseGradeEditScale,
+    CourseGradeOverview,
+    CourseGradeProgress,
+    CourseGradeEditScale,
   },
   props: {
     role: {
       type: String,
-      default: 'professor',
+      default: 'professor', // TODO: This seems really dangerous on any page
     },
     data: {
       type: Object,
@@ -101,6 +78,22 @@ export default {
     isOpen: {
       type: Boolean,
       required: false,
+    },
+    id: {
+      type: String,
+      required: true,
+    },
+    letterGrade: {
+      type: String,
+      required: true,
+    }, 
+    numNodesComp: { // TODO: Refactor - These may not all be needed. Maybe can be made smaller
+      type: Number,
+      required: true,
+    },
+    numNodesMast: {
+      type: Number,
+      required: true,
     },
   },
 
@@ -120,58 +113,6 @@ export default {
   methods: {
     closeModal(event) {
       this.$emit('onClose');
-    },
-    addResource() {
-      if (!this.newResource.name || !this.newResource.link) {
-        alert('Need to fill both fields');
-      } else {
-        if (this.newResource.link) {
-          if (this.newResource.link.substring(0, 4) != 'www.') {
-            var temp = this.newResource.link;
-            this.newResource.link = 'www.' + temp;
-          }
-          if (this.newResource.link.substring(0, 8) != 'https://') {
-            var temp = this.newResource.link;
-            this.newResource.link = 'https://' + temp;
-          }
-        }
-        this.resources.push({
-          name: this.newResource.name,
-          link: this.newResource.link,
-        });
-
-        const resourceData = {
-          name: this.newResource.name,
-          link: this.newResource.link,
-          topic: this.data.topic.id,
-        };
-
-        axios
-          .post(`${API_URL}/resources/`, resourceData)
-          .then(function(response) {
-            this.retrieveResources();
-          })
-          .catch(function(error) {});
-
-        this.newResource.name = '';
-        this.newResource.link = '';
-        this.saveResources();
-      }
-    },
-
-    removeResource(n) {
-      console.log(this.resources[n].pk);
-      axios
-        .delete(`${API_URL}/resources/${this.resources[n].pk}/`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } })
-        .then(function(response) {
-          //this.resources.splice(n, 1);
-          //this.retrieveResources();
-          //this.saveResources();
-          console.log(response);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
     },
   },
 };

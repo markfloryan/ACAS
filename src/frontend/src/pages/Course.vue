@@ -85,8 +85,12 @@
     </div>
     <CourseGradeModal
       :isOpen="courseGradeModalIsOpen"
-      :role="role"
+      :role="isProfessor ? 'professor' : 'student'"
       :data="classData"
+      :id="id"
+      :letterGrade="letterGrade"
+      :numNodesMast="numNodesMast"
+      :numNodesComp="numNodesComp"
       @onClose="courseGradeModalIsOpen = false; $emit('onClose');" />
   </div>
 </template>
@@ -120,9 +124,6 @@ export default {
       type: String,
       required: true,
     },
-    role: {
-      type: String,
-    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -175,6 +176,10 @@ export default {
           
           lockTree(classData);
           
+          this.numNodesLocked = 0;
+          this.numNodesComp = 0;
+          this.numNodesMast = 0;
+          
           classData.nodes.forEach((node) => {
             //console.log(JSON.stringify(node, null,4));
             if (node.topic.locked) // TODO: Node isn't actually locked
@@ -210,6 +215,7 @@ export default {
           };
         })
         .catch(error => {
+          console.log(error);
           this.classNotFound = true;
         })
         .finally(() => {

@@ -183,6 +183,84 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer.save()
         return successful_edit_response(serializer.data)
 
+'''
+______________________________________________________________________________________________      CompetencyThreshold
+    CompetencyThreshold: Contains functionality for viewing and editing competency thresholds
+______________________________________________________________________________________________
+'''
+class CompetencyThresholdViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = CompetencyThreshold.objects.all()
+    serializer_class = CompetencyThresholdSerializer
+    model = CompetencyThreshold
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/courses/<COURSE_ID>/competency-threshold
+     function: Retrieves competency thresholds for a single Course
+    __________________________________________________
+    '''
+    def get(self, request, format=None, pk=None):
+        if pk is not None:
+            try:
+                threshold = CompetencyThreshold.objects.filter(course__pk=pk)[0]
+                serializer = self.serializer_class(threshold, many=False)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        return successful_create_response(serializer.data)
+
+    def post(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def put(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def delete(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+'''
+______________________________________________________________________________________________      GradeThreshold
+    GradeThreshold: Contains functionality for viewing and editing grade thresholds
+______________________________________________________________________________________________
+'''
+class GradeThresholdViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = GradeThreshold.objects.all()
+    serializer_class = GradeThresholdSerializer
+    model = GradeThreshold
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/courses/<COURSE_ID>/competency-threshold
+     function: Retrieves competency thresholds for a single Course
+    __________________________________________________
+    '''
+    def get(self, request, format=None, pk=None):
+        if pk is not None:
+            try:
+                threshold = GradeThreshold.objects.filter(course__pk=pk)[0]
+                serializer = self.serializer_class(threshold, many=False)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        return successful_create_response(serializer.data)
+
+    def post(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def put(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def delete(self, request, format=None, pk=None):
+        return object_not_found_response()
+     
 
 '''
 ______________________________________________________________________________________________      Student
@@ -2002,6 +2080,7 @@ def courseGradescopeUpload(request,pk):
 
     conn = GSConnection()
     #conn.login('email', 'pass')
+    
     print(conn.state)
     conn.get_account()
 

@@ -145,6 +145,7 @@ export default {
           console.log(JSON.stringify(node, null, 4));
         }); */
 
+        console.log(JSON.stringify(newData, null, 4));
         lockTree(newData);
 
         this.nodes = this.generate_custom_graph_markup(newData.nodes);

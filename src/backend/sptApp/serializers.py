@@ -137,6 +137,55 @@ class CourseSerializer(SecureModelSerializer):
             'professor',
         )
 
+class CompetencyThresholdSerializer(SecureModelSerializer):
+
+    course = CourseSerializer(many=False, read_only=True)
+    class Meta:
+        model = CompetencyThreshold
+        fields = (
+            'pk',
+            'competency_threshold',
+            'mastery_threshold',
+            'course',
+        )
+
+class GradeThresholdSerializer(SecureModelSerializer):
+
+    course = CourseSerializer(many=False, read_only=True)
+    class Meta:
+        model = GradeThreshold
+        fields = (
+            'pk',
+            'a_plus_mastery',
+            'a_plus_competency',
+            'a_mastery',
+            'a_competency',
+            'a_minus_mastery',
+            'a_minus_competency',
+            
+            'b_plus_mastery',
+            'b_plus_competency',
+            'b_mastery',
+            'b_competency',
+            'b_minus_mastery',
+            'b_minus_competency',
+            
+            'c_plus_mastery',
+            'c_plus_competency',
+            'c_mastery',
+            'c_competency',
+            'c_minus_mastery',
+            'c_minus_competency',
+            
+            'd_plus_mastery',
+            'd_plus_competency',
+            'd_mastery',
+            'd_competency',
+            'd_minus_mastery',
+            'd_minus_competency',
+
+            'course',
+        )
 
 class QuizSerializer(SecureModelSerializer):
     next_open_date = serializers.DateTimeField()
