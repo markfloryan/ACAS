@@ -64,7 +64,8 @@ def update_course_grade(student_pk=None, course_pk=None):
         parent_node = getNode(parent_id)
         for child_id in children_ids:
             child_node = getNode(child_id)
-            child_node.topic.locked = child_node.topic.locked or parent_node.topic.locked or (parent_node.competency == 0)
+            if child_node is not None:
+                child_node.topic.locked = child_node.topic.locked or parent_node.topic.locked or (parent_node.competency == 0)
     
 
     # Get root TODO: Multiple root handling
