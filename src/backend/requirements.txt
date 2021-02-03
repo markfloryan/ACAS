@@ -12,3 +12,4 @@ python-jose
 paramiko
 idna==2.7
 requests
+beautifulsoup4

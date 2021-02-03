@@ -56,6 +56,9 @@ from .models import *
 from .responses import *
 from .serializers import *
 
+# GradeScope
+from sptApp.gradescopeAPI.pyscope.pyscope import *
+
 
 ''' API ENDPOINTS '''
 
@@ -180,6 +183,84 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer.save()
         return successful_edit_response(serializer.data)
 
+'''
+______________________________________________________________________________________________      CompetencyThreshold
+    CompetencyThreshold: Contains functionality for viewing and editing competency thresholds
+______________________________________________________________________________________________
+'''
+class CompetencyThresholdViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = CompetencyThreshold.objects.all()
+    serializer_class = CompetencyThresholdSerializer
+    model = CompetencyThreshold
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/courses/<COURSE_ID>/competency-threshold
+     function: Retrieves competency thresholds for a single Course
+    __________________________________________________
+    '''
+    def get(self, request, format=None, pk=None):
+        if pk is not None:
+            try:
+                threshold = CompetencyThreshold.objects.filter(course__pk=pk)[0]
+                serializer = self.serializer_class(threshold, many=False)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        return successful_create_response(serializer.data)
+
+    def post(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def put(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def delete(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+'''
+______________________________________________________________________________________________      GradeThreshold
+    GradeThreshold: Contains functionality for viewing and editing grade thresholds
+______________________________________________________________________________________________
+'''
+class GradeThresholdViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = GradeThreshold.objects.all()
+    serializer_class = GradeThresholdSerializer
+    model = GradeThreshold
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/courses/<COURSE_ID>/competency-threshold
+     function: Retrieves competency thresholds for a single Course
+    __________________________________________________
+    '''
+    def get(self, request, format=None, pk=None):
+        if pk is not None:
+            try:
+                threshold = GradeThreshold.objects.filter(course__pk=pk)[0]
+                serializer = self.serializer_class(threshold, many=False)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        return successful_create_response(serializer.data)
+
+    def post(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def put(self, request, format=None, pk=None):
+        return object_not_found_response()
+
+    def delete(self, request, format=None, pk=None):
+        return object_not_found_response()
+     
 
 '''
 ______________________________________________________________________________________________      Student
@@ -294,8 +375,10 @@ class StudentViewSet(viewsets.ModelViewSet):
                 'last_name': fullProfile.get('family_name'),
                 'email': fullProfile.get('email'),
                 'id_token': params['id_token'],
-                'is_professor': 'f'
+                'is_professor': 'f',
+                'username': fullProfile.get('email') # TODO: Temp username fix
             }
+            print(data['username'])
 
         #If the id_token was bad and did not create a profile for us, return an error
         if data['email'] is None:
@@ -1973,6 +2056,60 @@ def courseGradesUpload(request,pk):
             'ok': False,
             'errors': errors
         })
+
+'''
+__________________________________________________  Get
+    url: GET :: <WEBSITE>/api/courseGradescopeUpload/
+    function: Fetches corresponding GradeScope data and uploads it
+__________________________________________________
+'''
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated & IsProfessor])
+def courseGradescopeUpload(request,pk):
+
+    course = None
+    try:
+        course = Course.objects.get(pk=pk)
+    except Course.DoesNotExist:
+        return JsonResponse({
+            'ok':False,
+            'errors':['Could not find course with primary key {}'.format(pk)]
+        })
+
+    conn = GSConnection()
+    #conn.login('email', 'pass')
+    
+    print(conn.state)
+    conn.get_account()
+
+    grades = None
+    for cnum in conn.account.instructor_courses:
+        gs_course = conn.account.instructor_courses[cnum]
+
+        if gs_course.name != course.name:
+            shortname = course.subject_code + ' ' + course.course_code
+            if gs_course.shortname != shortname:
+                continue
+
+        print(str(gs_course))
+        gs_course._force_load_data()
+        grades = gs_course.get_grades()
+
+    ## Make post request with new csv
+    # TODO: hardcoded url
+    url = 'http://localhost:8000/api/courseGradesUpload/' + pk
+    
+    with open('gradescopeUpload.csv','w+') as f:
+        f.write(grades)
+        f.flush()
+        f.seek(0)
+        headers = {'Authorization' : request.headers['Authorization']}
+        r = requests.post(url, headers=headers, files = {'csv': ('grades.csv', f, 'text/csv', {'Expires': '0'})})
+    return JsonResponse({
+        'ok': r.text
+    })
 
 
 #Assignment uploading feature

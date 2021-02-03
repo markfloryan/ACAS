@@ -96,6 +96,7 @@ class Student(AbstractUser):
 
     is_professor = models.BooleanField(default=False)
 
+    # TODO: Username is not just used for superuser. It is included in the CSV uploads
     # For creating a superuser
     username = models.CharField(blank=True, null=True, max_length=150)
     password = models.CharField(_('password'), max_length=128, blank=True, null=True)
@@ -172,6 +173,7 @@ class StudentToCourse(models.Model):
     semester = models.CharField(max_length=250, null=True, blank=True)
 
     grade = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    letterGrade = models.CharField(max_length=2, default='?')
 
     def set_grade(self, val):
         grade = val
@@ -683,6 +685,9 @@ class TopicToTopic(models.Model):
 
     def __str__(self):
         return self.ancestor_node.__str__() + " -> " + self.topic_node.__str__()
+
+    def topic_name(self):
+        return self.topic_node.name
 
     def ancestor_name(self):
         return self.ancestor_node.name

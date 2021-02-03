@@ -5,8 +5,17 @@
     or edit the graph for the class
   -->
   <div class="dashboard">
-    <h2 class="title">Class - {{ classData.name ? classData.name : this.id }}</h2>
+    <!-- Course Selected -->
+    <h2 class="title">Class - {{ classData.name ? classData.name : this.id}}</h2>
+    
+    <!-- Top action buttons-->
     <div class="actions">
+      <button
+        v-if="isProfessor"
+        class="btn btn-plain edit-btn"
+        style="margin-left: 8pt;"
+        @click="pullGrades()"
+      >Update grades</button>
       <button
         v-if="isProfessor"
         class="btn btn-plain edit-btn"
@@ -33,9 +42,21 @@
       >Back to graph</button>
       <h3
         id="grade"
-        v-if="this.totalgrade!=0"
-      >Grade: {{this.totalgrade}}</h3>
+        v-if="!isProfessor"
+        data-toggle="tooltip"
+        data-placement="bottom"
+        :title="'Nodes at mastery: ' + this.numNodesMast + ' | competency: ' + this.numNodesComp"
+        @click="clickGradeModal('TODO:')"
+      >Grade: {{this.letterGrade}}
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"></path>
+        <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"></path>
+      </svg>
+      </h3>
+        
     </div>
+
+    <!-- Variable Content -->
     <Sidebar class="sidebar"/>
     <div class="content">
       <CourseRoster
@@ -48,9 +69,10 @@
         :courseId="id"
         @contextChange="changeContext"
       />
+      <!-- TODO: What does id="3" mean? Is it hardcoded? -->
       <ClassGraph
         :hidden="context !== 'classGraph'"
-        :id="3"
+        :id="3" 
         :role="isProfessor ? 'professor' : 'student'"
         :data="graphData"
         @onClose="retrieveClassGraph"
@@ -61,6 +83,15 @@
       >No class graph found :(</h1>
       <LoadingLayer v-if="isLoading" :message="'Fetching course...'"/>
     </div>
+    <CourseGradeModal
+      :isOpen="courseGradeModalIsOpen"
+      :role="isProfessor ? 'professor' : 'student'"
+      :data="classData"
+      :id="id"
+      :letterGrade="letterGrade"
+      :numNodesMast="numNodesMast"
+      :numNodesComp="numNodesComp"
+      @onClose="courseGradeModalIsOpen = false; $emit('onClose');" />
   </div>
 </template>
 
@@ -75,6 +106,9 @@ import ClassGraph from '@/components/ClassGraph';
 import LoadingLayer from '@/components/LoadingLayer';
 import Sidebar from '@/components/Sidebar';
 import { API_URL } from '@/constants';
+import { lockTree } from '@/components/NodeLock';
+import CourseGradeModal from '@/components/CourseGradeModal';
+
 export default {
   name: 'Course',
   components: {
@@ -83,6 +117,7 @@ export default {
     ClassGraph,
     LoadingLayer,
     Sidebar,
+    CourseGradeModal,
   },
   props: {
     id: {
@@ -103,8 +138,13 @@ export default {
       isLoading: false,
       isProfessor: false,
       numberofNodes: 0,
-      totalgrade: 0,
+      totalgrade: 0, // TODO: Deprecated use of grade % not letter grade
+      letterGrade: '?',
+      numNodesMast: 0,
+      numNodesComp: 0,
+      numNodesLocked: 0,
       file: '',
+      courseGradeModalIsOpen: false,
     };
   },
   created() {
@@ -132,6 +172,24 @@ export default {
         .then(data => {
           this.classNotFound = false;
           let classData = data.data.result;
+          this.totalgrade = classData.grade;
+          
+          lockTree(classData);
+          
+          this.numNodesLocked = 0;
+          this.numNodesComp = 0;
+          this.numNodesMast = 0;
+          
+          classData.nodes.forEach((node) => {
+            //console.log(JSON.stringify(node, null,4));
+            if (node.topic.locked) // TODO: Node isn't actually locked
+              this.numNodesLocked++;
+            else if (node.competency == 1)
+              this.numNodesComp++;
+            else if (node.competency == 2)
+              this.numNodesMast++;
+          });
+          this.letterGrade = classData.letterGrade;
           classData = {
             pk: classData.course.pk,
             name: classData.course.name,
@@ -140,7 +198,7 @@ export default {
             nodes: classData.nodes,
             edges: classData.edges,
           };
-          this.totalgrade = data.data.result.grade;
+          // Loop through all nodes and sum progress
           classData.nodes = classData.nodes.map(node => {
             return {
               ...node,
@@ -157,6 +215,7 @@ export default {
           };
         })
         .catch(error => {
+          console.log(error);
           this.classNotFound = true;
         })
         .finally(() => {
@@ -166,6 +225,57 @@ export default {
     toEdit() {
       this.$router.push({ name: 'Edit', params: { id: this.id } });
     },
+    pullGrades() {
+      let localID = this.profile.id_token;
+      let coursePK = this.id;
+      axios
+        .get( `${API_URL}/courseGradescopeUpload/${coursePK}`,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.ok) {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Pull',
+              message: 'Grades added to gradebook',
+              duration: 5000,
+            });
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Pulling Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        /*
+        setTimeout(function(){ 
+          openToast();
+          this.setToastInfo({
+            type: 'error',
+            title: 'Uploading Error',
+            message: `${response.data.errors[1]}`,
+            duration: 6000,
+        }); }, 6000);*/
+          //}
+      
+        })
+        .catch(function(){
+          console.log(`${API_URL}/courseGradesUpload/${coursePK}`);
+          console.log('FAILURE');
+        });
+    },
+    clickGradeModal(data) {
+      this.courseGradeModalIsOpen = true;
+    },
+    
     ...mapMutations(
       'toast',
       ['openToast', 'setToastInfo'],

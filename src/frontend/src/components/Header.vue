@@ -12,6 +12,8 @@
     <div class="menu">
 
       <div class="left">
+        <router-link v-if="isAuthenticated" to="/"> {{this.$store.state.auth.profile.email}} </router-link>
+        <!-- TODO: Search doesn't appear to be present -->
         <search-field
           v-if="isAuthenticated && profile.group"
           :placeholder="'Search students...'"

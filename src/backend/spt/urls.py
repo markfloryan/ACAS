@@ -34,6 +34,8 @@ request_override_map_delete = {
 }
 
 course_list = api_views.CourseViewSet.as_view(request_override_map)
+competency_threshold_list = api_views.CompetencyThresholdViewSet.as_view(request_override_map)
+grade_threshold_list = api_views.GradeThresholdViewSet.as_view(request_override_map)
 student_list = api_views.StudentViewSet.as_view(request_override_map)
 topic_list = api_views.TopicViewSet.as_view(request_override_map)
 student_to_topic_list = api_views.StudentToTopicViewSet.as_view(request_override_map)
@@ -49,6 +51,7 @@ quiz_question_list = api_views.QuizQuestionViewSet.as_view(request_override_map)
 quiz_interface = api_views.QuizInterfaceViewSet.as_view(request_override_map)
 course_roster_upload = api_views.CourseRosterUpload.as_view(request_override_map)
 course_grades_upload = api_views.courseGradesUpload
+course_gradescope_upload = api_views.courseGradescopeUpload
 course_assignment_upload = api_views.assignmentUpload
 assignment_quiz_upload = api_views.assignmentQuizUpload
 students_in_topic = api_views.CourseTopicToStudentViewSet.as_view(request_override_map)
@@ -66,11 +69,13 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
     # Courses
-    url(r'^api/courses/(?P<pk>[0-9]+)', course_list, name='course-detail'),
-    url(r'^api/courses/', course_list, name='course-list'),
+    url(r'^api/courses/(?P<pk>[0-9]+)/competency-threshold', competency_threshold_list, name='course-competency-threshold'),
+    url(r'^api/courses/(?P<pk>[0-9]+)/grade-threshold', grade_threshold_list, name='grade-competency-threshold'),
     url(r'^api/courses/(?P<pk>[0-9]+)/graph-data', api_views.CourseViewSet.as_view(
         {"get": "graph_data"}
     ), name='course-graph-data'),
+    url(r'^api/courses/(?P<pk>[0-9]+)', course_list, name='course-detail'),
+    url(r'^api/courses/', course_list, name='course-list'),
 
     #search and students
     url(r'^api/search/', search_list, name='search-detail'),
@@ -79,6 +84,8 @@ urlpatterns = [
 
     url(r'^api/courseRosterUpload/(?P<coursePk>[0-9]+)', course_roster_upload, name='course-roster-upload'),
     url(r'^api/courseGradesUpload/(?P<pk>[0-9]+)', course_grades_upload, name='course-grades-upload'),
+    url(r'^api/courseGradescopeUpload/(?P<pk>[0-9]+)', course_gradescope_upload, name='course-gradescope-upload'),
+    
     url(r'^api/courseAssignmentUpload/(?P<pk>[0-9]+)', course_assignment_upload, name='course-assignment-upload'),
     url(r'^api/assignmentQuizUpload/(?P<pk>[0-9]+)', assignment_quiz_upload, name='assignment-quiz-upload'),
 

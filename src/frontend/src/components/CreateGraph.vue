@@ -65,7 +65,7 @@
         </span>
         <!-- button shows upload, allows user to upload file, then sumbmit sends file to file handling function (for grades) -->
         <span v-if="!displayError" class = "bottom" >
-         <p>Upload grades for current course</p>
+         <p>Upload grades for current course</p> <!-- TODO: Where is this? -->
         <p>each student is a line: </p>
          <img
             width="400px"

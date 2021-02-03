@@ -30,9 +30,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '4-bjy!q0#^l6b86n1oz)*x29ucb2_r8@86zb7%9g-p#e1g+%=c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.environ['DEBUG'] != 'False')
-
-ALLOWED_HOSTS = [os.environ['DOMAIN'],'spt-acas.com','localhost','backend','hotcake.cs.virginia.edu','192.241.130.41','10.1.1.174','128.143.71.210','142.93.49.175']
+try:
+    DEBUG = (os.environ['DEBUG'] != 'False')
+except:
+    DEBUG = False
+# TODO: try catched these two env vars. Is this an issue?
+try:
+    ALLOWED_HOSTS = [os.environ['DOMAIN'],'spt-acas.com','localhost','backend','hotcake.cs.virginia.edu','192.241.130.41','10.1.1.174','128.143.71.210','142.93.49.175']
+except:
+    ALLOWED_HOSTS = ['spt-acas.com','localhost','backend','hotcake.cs.virginia.edu','192.241.130.41','10.1.1.174','128.143.71.210','142.93.49.175']
 
 # Application definition
 

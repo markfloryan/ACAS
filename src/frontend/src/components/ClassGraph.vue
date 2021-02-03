@@ -30,6 +30,7 @@ import { Network } from 'vue2vis';
 import { generate_svg } from '@/assets/graph_node_svg.js';
 import { edges, nodes as nodeData, options } from '@/assets/test_graph_data.js';
 import TopicModal from '@/components/TopicModal';
+import { lockTree } from '@/components/NodeLock';
 
 export default {
   components: {
@@ -74,6 +75,7 @@ export default {
 
       let nodeImage;
       nodes.forEach((node) => {
+        // TODO: node lock boolean is passed here
         nodeImage = generate_svg(SVG, node.topic.name, node.competency, node.topic.locked);
         node.shape = 'image';
         node.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(nodeImage);
@@ -121,8 +123,8 @@ export default {
         this.nodes = this.generate_custom_graph_markup(newData.nodes);
         this.options = options(this.layoutMethod);
       }
-      // builds the graph if the user is not a professor; only displays unlocked
-      // topics
+      // TODO: Unlock nodes
+      // builds the graph if the user is not a professor; displays all nodes
       else if(newData.edges && newData.nodes) {
         this.edges = newData.edges.map((edge) => {
           return { from: edge.ancestor_node, to: edge.topic_node};
@@ -133,7 +135,21 @@ export default {
         //     tempNodes.push(node)
         //   }
         // });
-        this.nodes = this.generate_custom_graph_markup(newData.nodes.filter((node) => !node.topic.locked));
+        //this.nodes = this.generate_custom_graph_markup(newData.nodes);
+        
+        /*
+        newData.edges.forEach((edge) => {
+          console.log(JSON.stringify(edge, null,4));
+        });
+        newData.nodes.forEach((node) => {
+          console.log(JSON.stringify(node, null, 4));
+        }); */
+
+        lockTree(newData);
+
+        this.nodes = this.generate_custom_graph_markup(newData.nodes);
+        
+        //this.nodes = this.generate_custom_graph_markup(newData.nodes.filter((node) => !node.topic.locked));
         this.options = options(this.layoutMethod);
       }
     }

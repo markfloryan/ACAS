@@ -17,7 +17,7 @@ def associated_course(obj):
 
 class AssignmentAdmin(admin.ModelAdmin):
     list_display = ['name','topic','weight',associated_course]
-    list_filter = ('topic',)
+    list_filter = ('topic__course__name','topic',)
 
 class CompetencyThresholdAdmin(admin.ModelAdmin):
     list_display = ['course','competency_threshold','mastery_threshold']
@@ -39,10 +39,14 @@ class ResourcesAdmin(admin.ModelAdmin):
 
 class StudentToAssignmentAdmin(admin.ModelAdmin):
     list_display = ['student', 'assignment', 'grade', associated_course]
-    list_filter = ('assignment',)
+    #list_filter = ('assignment__topic__course__name','assignment',)
+    #search_fields = ['assignment__name','assignment__topic__name','assignment__name','student__email','student__first_name','student__last_name']
+
 
 class StudentToCourseAdmin(admin.ModelAdmin):
-    list_display = ['student','course','grade']
+    list_display = ['student','course','letterGrade']
+    list_filter = ('course__name','letterGrade',)
+    search_fields = ['student__email','student__first_name','student__last_name']
 
 class StudentToQuizQuestionAdmin(admin.ModelAdmin):
     list_display = ['student','quiz_question','correct','num_submissions']
@@ -53,16 +57,23 @@ class StudentToQuizAdmin(admin.ModelAdmin):
 
 class StudentToTopicAdmin(admin.ModelAdmin):
     list_display = ['student','topic','competency','course']
-    list_filter = ('topic',)
+    list_filter = ('topic__course__name','topic',)
+    search_fields = ['student__email','student__first_name','student__last_name']
 
 class TopicToTopicAdmin(admin.ModelAdmin):
     list_display = ['__str__','course']
+    list_filter = ('course__name',)
+    search_fields = ['topic_node__name','ancestor_node__name']
 
 class TopicAdmin(admin.ModelAdmin):
     list_display = ['name','course','locked']
+    list_filter = ('course__name',)
+    search_fields = ['name']
 
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['email','first_name','last_name','is_professor']
+    list_display = ['email','first_name','last_name','username','is_professor']
+    list_filter = ('is_professor'),
+    search_fields = ['email','first_name','last_name','username',]
 
 admin.site.register(Assignment, AssignmentAdmin)
 admin.site.register(CompetencyThreshold, CompetencyThresholdAdmin)
