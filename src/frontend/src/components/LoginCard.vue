@@ -30,14 +30,6 @@
       </div>
 
       <!-- Debug Professor Sign in -->
-      <div v-if="!isSignUp && debugLogin" id="debugProfSignIn" class="g-signin-button" @click="debugProfSignIn">
-        <p>Debug Prof Sign In</p>
-      </div>
-
-      <!-- Debug Student Sign in -->
-      <div v-if="!isSignUp && debugLogin" id="debugStudSignIn" class="g-signin-button" @click="debugStudSignIn">
-        <p>Debug Stud Sign In</p>
-      </div>
 
       <!-- Sign Up -->
       <div v-if="isSignUp" id="studentButton" class="g-signin-button" @click="signUp(false)">
