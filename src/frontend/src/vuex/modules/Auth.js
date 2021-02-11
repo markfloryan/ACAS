@@ -141,62 +141,6 @@ const actions = {
     });
   },
 
-  // backdoor Sign in for floryan
-  debugProfSignIn({ dispatch, commit }) {
-    return new Promise((resolve, reject) => {
-      // verify token with a backend server (identify user)
-      dispatch('verifyToken', '12345')
-        .then(profile => {
-          // Gather settings
-          axios
-            .get(`${API_URL}/settings/`, { headers: { Authorization: 'Bearer 12345' } })
-            .then(response => {
-              const settings = response.data.result;
-              commit('settings/colorChange', settings.color, {
-                root: true,
-              });
-              commit('signIn', profile);
-              resolve();
-            })
-            .catch(response => {});
-        })
-        .catch(err => {
-          console.log(err);
-          dispatch('signOut').then(() => {
-            reject();
-          });
-        });
-    });
-  },
-
-  // backdoor Sign in for dummy student
-  debugStudSignIn({ dispatch, commit }) {
-    return new Promise((resolve, reject) => {
-      // verify token with a backend server (identify user)
-      dispatch('verifyToken', '54321')
-        .then(profile => {
-          // Gather settings
-          axios
-            .get(`${API_URL}/settings/`, { headers: { Authorization: 'Bearer 54321' } })
-            .then(response => {
-              const settings = response.data.result;
-              commit('settings/colorChange', settings.color, {
-                root: true,
-              });
-              commit('signIn', profile);
-              resolve();
-            })
-            .catch(response => {});
-        })
-        .catch(err => {
-          console.log(err);
-          dispatch('signOut').then(() => {
-            reject();
-          });
-        });
-    });
-  },
-
   // Sign in a user
   signIn({ dispatch, commit }) {
     return new Promise((resolve, reject) => {
@@ -262,19 +206,17 @@ const actions = {
     return new Promise((resolve, reject) => {
 
       var reject = false;
-      if(token != 12345 && token != 54321){
-        try {
-          token = gapi.auth2
-            .getAuthInstance()
-            .currentUser.get()
-            .getAuthResponse().id_token;
-        } catch (e) {
-          reject = true;
-        }	
-        if (!token) {
-          reject = true;
-        } 
-      }
+      try {
+        token = gapi.auth2
+          .getAuthInstance()
+          .currentUser.get()
+          .getAuthResponse().id_token;
+      } catch (e) {
+        reject = true;
+      }	
+      if (!token) {
+        reject = true;
+      } 
       
 
       /* This is where the verification is taking place */

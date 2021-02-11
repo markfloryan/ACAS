@@ -2080,7 +2080,7 @@ def courseGradescopeUpload(request,pk):
 
     conn = GSConnection()
     #conn.login('email', 'pass')
-    
+
     print(conn.state)
     conn.get_account()
 
@@ -2093,9 +2093,15 @@ def courseGradescopeUpload(request,pk):
             if gs_course.shortname != shortname:
                 continue
 
-        print(str(gs_course))
+        print('Grabbing grades from: ' + str(gs_course))
         gs_course._force_load_data()
         grades = gs_course.get_grades()
+
+    if grades is None:
+        return JsonResponse({
+            'ok': False,
+            'errors':['Could not get grade data from course: '.format(course.name)]
+        })
 
     ## Make post request with new csv
     # TODO: hardcoded url
