@@ -19,7 +19,7 @@ services:
       - '5432:5432'
     environment:
       - DEBUG=True
-      - DOMAIN=spt-acas.com
+      - DOMAIN=hotcake.cs.virginia.edu
     links:
       - db:the_db
     depends_on:
