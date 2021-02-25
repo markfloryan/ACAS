@@ -11,7 +11,6 @@
     <!-- Top action buttons-->
     <div class="actions">
       <button
-        v-if="isProfessor"
         class="btn btn-plain edit-btn"
         style="margin-left: 8pt;"
         @click="pullGrades()"
@@ -226,7 +225,6 @@ export default {
       this.$router.push({ name: 'Edit', params: { id: this.id } });
     },
     pullGrades() {
-      let localID = this.profile.id_token;
       let coursePK = this.id;
       axios
         .get( `${API_URL}/courseGradescopeUpload/${coursePK}`,

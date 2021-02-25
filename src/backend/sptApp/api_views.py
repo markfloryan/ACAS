@@ -2066,7 +2066,7 @@ __________________________________________________
 @csrf_exempt
 @api_view(['GET'])
 @authentication_classes([GoogleOAuth])
-@permission_classes([IsAuthenticated & IsProfessor])
+@permission_classes([IsAuthenticated])
 def courseGradescopeUpload(request,pk):
 
     course = None
