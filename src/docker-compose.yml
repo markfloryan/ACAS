@@ -14,12 +14,15 @@ services:
     container_name: 'backend'
     volumes:
       - ./backend:/code
+      - ../:/ACAS
     ports:
       - '8000:8000'
       - '5432:5432'
     environment:
       - DEBUG=True
       - DOMAIN=hotcake.cs.virginia.edu
+      - GRADESCOPE_EMAIL=${GRADESCOPE_EMAIL}
+      - GRADESCOPE_PASSWORD=${GRADESCOPE_PASSWORD}
     links:
       - db:the_db
     depends_on:
