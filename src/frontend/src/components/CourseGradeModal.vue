@@ -41,6 +41,9 @@
           :role="role"
           :data="data"
           :id="id"
+          :letterGrade="letterGrade"
+          :numNodesMast="numNodesMast"
+          :numNodesComp="numNodesComp"
         />
         <CourseGradeEditScale
           v-if="context === 'edit_grading_scale'"

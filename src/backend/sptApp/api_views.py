@@ -59,9 +59,23 @@ from .serializers import *
 # GradeScope
 from sptApp.gradescopeAPI.pyscope.pyscope import *
 
+# Development Integration
+import os
 
 ''' API ENDPOINTS '''
 
+'''
+gitpull
+api/gitpull
+'''
+
+@csrf_exempt
+@api_view(['GET'])
+def gitPull(request):
+    os.system("git pull")
+    return JsonResponse({
+        'ok': True
+    })
 
 '''
 ______________________________________________________________________________________________      Course
@@ -1731,6 +1745,32 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
             return successful_edit_response(serializer.data)
 
 '''
+studentProgress
+api/student/course/(?P<pk>[0-9]+)/progress
+'''
+
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated])
+def studentProgress(request,pk):
+    user = request.user
+
+    try:
+        course = Course.objects.get(pk=pk)
+        stc = StudentToCourse.objects.get(course=course, student=user)
+        
+    except Course.DoesNotExist:
+        return object_not_found_response()
+    print("Hey!")
+
+    stc_serializer = StudentToCourseSerializer(stc)
+    progressReport = {}
+    progressReport['stc'] = stc_serializer.data
+    #progressReport.update(stc_serializer.data)
+    return successful_create_response(progressReport)
+
+'''
 ______________________________________________________________________________________________
 CourseRosterUpload: Functionality for uploading a file with existing grades
 ______________________________________________________________________________________________
@@ -2079,7 +2119,9 @@ def courseGradescopeUpload(request,pk):
         })
 
     conn = GSConnection()
-    #conn.login('email', 'pass')
+    gradescope_email = os.getenv('GRADESCOPE_EMAIL')
+    gradescope_password = os.getenv('GRADESCOPE_PASSWORD')
+    conn.login(gradescope_email, gradescope_password)
 
     print(conn.state)
     conn.get_account()
@@ -2114,7 +2156,7 @@ def courseGradescopeUpload(request,pk):
         # Get a professor token to upload the grades. TODO: I'm not sure how long these tokens are valid for. I think they update over time? This would mean if we select an inactive professor we wouldn't be able to upload the grades
         try:
             professor = Student.objects.filter(is_professor=True)[0]
-        except Course.DoesNotExist:
+        except Course.DoesNotExist: # TODO: This shouldn't be Course.
             return JsonResponse({
                 'ok':False,
                 'errors':['Could not find valid professor {}'. format(pk)]

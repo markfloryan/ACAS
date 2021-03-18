@@ -20,6 +20,8 @@ services:
     environment:
       - DEBUG=True
       - DOMAIN=spt-acas.com
+      - GRADESCOPE_EMAIL=${GRADESCOPE_EMAIL}
+      - GRADESCOPE_PASSWORD=${GRADESCOPE_PASSWORD}
     links:
       - db:the_db
     depends_on:
