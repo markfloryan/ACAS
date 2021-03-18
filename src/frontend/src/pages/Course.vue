@@ -11,9 +11,11 @@
     <!-- Top action buttons-->
     <div class="actions">
       <button
-        v-if="isProfessor"
         class="btn btn-plain edit-btn"
         style="margin-left: 8pt;"
+        data-toggle="tooltip"
+        data-placement="bottom"
+        :title="'Grades Updated: ' + this.grades_updated"
         @click="pullGrades()"
       >Update grades</button>
       <button
@@ -137,6 +139,7 @@ export default {
       graphData: {},
       isLoading: false,
       isProfessor: false,
+      grades_updated: 0,
       numberofNodes: 0,
       totalgrade: 0, // TODO: Deprecated use of grade % not letter grade
       letterGrade: '?',
@@ -174,6 +177,8 @@ export default {
           let classData = data.data.result;
           this.totalgrade = classData.grade;
           
+          this.grades_updated = classData.course.grades_updated;
+
           lockTree(classData);
           
           this.numNodesLocked = 0;
@@ -226,7 +231,6 @@ export default {
       this.$router.push({ name: 'Edit', params: { id: this.id } });
     },
     pullGrades() {
-      let localID = this.profile.id_token;
       let coursePK = this.id;
       axios
         .get( `${API_URL}/courseGradescopeUpload/${coursePK}`,
@@ -270,6 +274,9 @@ export default {
         .catch(function(){
           console.log(`${API_URL}/courseGradesUpload/${coursePK}`);
           console.log('FAILURE');
+        })
+        .finally(() => {
+          location.reload();
         });
     },
     clickGradeModal(data) {

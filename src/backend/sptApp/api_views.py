@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.core.exceptions import *
 from django.contrib.auth import login
-
+from datetime import datetime
 
 # Making calls to google (get and post)
 import requests
@@ -2066,7 +2066,7 @@ __________________________________________________
 @csrf_exempt
 @api_view(['GET'])
 @authentication_classes([GoogleOAuth])
-@permission_classes([IsAuthenticated & IsProfessor])
+@permission_classes([IsAuthenticated])
 def courseGradescopeUpload(request,pk):
 
     course = None
@@ -2111,8 +2111,32 @@ def courseGradescopeUpload(request,pk):
         f.write(grades)
         f.flush()
         f.seek(0)
-        headers = {'Authorization' : request.headers['Authorization']}
+        # Get a professor token to upload the grades. TODO: I'm not sure how long these tokens are valid for. I think they update over time? This would mean if we select an inactive professor we wouldn't be able to upload the grades
+        try:
+            professor = Student.objects.filter(is_professor=True)[0]
+        except Course.DoesNotExist:
+            return JsonResponse({
+                'ok':False,
+                'errors':['Could not find valid professor {}'. format(pk)]
+            })
+        headers = {'Authorization' : 'Bearer ' + professor.id_token}
         r = requests.post(url, headers=headers, files = {'csv': ('grades.csv', f, 'text/csv', {'Expires': '0'})})
+        print(r)
+        print(r.reason)
+        if r.reason == 'Unauthorized':
+            return JsonResponse({
+                'ok':False,
+                'errors':['Unauthorized grade upload']
+            })
+        elif not r.ok:
+            return JsonResponse({
+                'ok':False,
+                'errors':['Failed to upload grades']
+            })
+    
+    course.grades_updated = datetime.now()
+    course.save()
+
     return JsonResponse({
         'ok': r.text
     })

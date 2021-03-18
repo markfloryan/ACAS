@@ -150,6 +150,8 @@ class Course(models.Model):
 
     teaching_assistants = models.ManyToManyField(Student, blank=True)
 
+    grades_updated = models.DateTimeField(default=datetime.now)
+
     def __str__(self):
         return self.subject_code + " " + self.course_code + " " + self.name
 
