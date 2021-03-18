@@ -72,7 +72,8 @@ api/gitpull
 @csrf_exempt
 @api_view(['GET'])
 def gitPull(request):
-    os.system("git pull")
+    os.system("cd ../ACAS && git pull")
+    os.system("cd ../ACAS/src/backend/sptApp/gradescopeAPI && git pull")
     return JsonResponse({
         'ok': True
     })

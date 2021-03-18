@@ -139,7 +139,7 @@ export default {
       axios.get(`${API_URL}/courses/${this.id}/competency-threshold`, { headers: { Authorization: `Bearer ${profile.auth.profile.id_token}` } })
         .then((comp) => {
           this.competency_thresholds = comp.data.result;
-          this.competency_thresholds['course'] = {};
+          this.competency_thresholds['course'] = {}; // This can probably be removed
           delete this.competency_thresholds.pk;
           delete this.competency_thresholds.course;
         });
