@@ -2079,7 +2079,7 @@ def courseGradescopeUpload(request,pk):
         })
 
     conn = GSConnection()
-    #conn.login('email', 'pass')
+    conn.login('ACAS.Bot@gmail.com', 'acasbot1scool')
 
     print(conn.state)
     conn.get_account()
