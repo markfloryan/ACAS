@@ -44,6 +44,7 @@
           :letterGrade="letterGrade"
           :numNodesMast="numNodesMast"
           :numNodesComp="numNodesComp"
+          :graphData="graphData"
         />
         <CourseGradeEditScale
           v-if="context === 'edit_grading_scale'"
@@ -98,6 +99,7 @@ export default {
       type: Number,
       required: true,
     },
+    graphData: {},
   },
 
   data() {
