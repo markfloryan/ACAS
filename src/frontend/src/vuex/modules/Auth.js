@@ -1,9 +1,7 @@
 import api from '../../api';
 import store from '../index';
 import axios from 'axios';
-import { API_URL } from '@/constants/';
-import { DEBUG_TOKEN } from '@/constants/';
-//import { IN_PROD } from '@/constants/';
+import { API_URL, CLIENT_ID } from '@/constants/';
 
 const state = {
   signedIn: false,
@@ -13,12 +11,13 @@ const state = {
 const actions = {
   // Contact the google API
   initGapi({ commit }) {
+    console.log(process.env); // TOD: Rmove debug
     return new Promise((resolve, reject) => {
       gapi.load('auth2', {
         callback: () => {
           gapi.auth2 // Note: apply_deployment_vars.sh will update the client_id when during the production docker build
             .init({  // The script will break if the client_id string is changed such that it is no longer on its own line.
-              client_id: '250281465409-dohlj94rioi60eiqqc2mdmsh4klgcpck.apps.googleusercontent.com', // You can change the string itself
+              client_id: CLIENT_ID,
             }) // But do not put this closing curly brace and parenthesis on the same line as the client_id or else the production build will break
             .then(() => {
               resolve();

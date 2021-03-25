@@ -11,11 +11,8 @@ try:
 except:
     API_DEBUG = False
 
-# Try to get CLIENT_ID from the CLIENT_ID environment variable, otherwise use the specified default
-try:
-    CLIENT_ID = os.environ['CLIENT_ID']
-except:
-    CLIENT_ID = '250281465409-dohlj94rioi60eiqqc2mdmsh4klgcpck.apps.googleusercontent.com'
+# Try to get CLIENT_ID from the CLIENT_ID environment variable
+CLIENT_ID = os.environ['CLIENT_ID']
 
 def get_bearer_token(auth_str):
     if auth_str is None:
