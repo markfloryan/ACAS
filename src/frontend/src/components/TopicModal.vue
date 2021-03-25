@@ -1,7 +1,7 @@
 <template>
   <div v-if="isOpen" class="topic-modal" @click.self="closeModal()">
     <div class="content" style="margin-top: 8pt; overflow-y: scroll">
-      <h2 class="title">{{ pageTitle }} - Average: {{ topicGrade.toFixed(1) }}</h2> <!-- TODO: toFixed() throws an error even though it works? -->
+      <h2 class="title">{{ pageTitle }}</h2> <!-- TODO: toFixed() throws an error even though it works? -->
       <sui-icon @click="closeModal()" name="close icon" class="close-modal-button"/>
       <!-- take out extraneous code later -->
       <template v-if="true">
