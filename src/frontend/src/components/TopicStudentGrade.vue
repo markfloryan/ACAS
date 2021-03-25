@@ -16,7 +16,8 @@
             <sui-table-header>
               <sui-table-row>
                 <sui-table-header-cell :width="10">Assignment</sui-table-header-cell>
-                <sui-table-header-cell :width="2" text-align="right">Grade</sui-table-header-cell>
+                <sui-table-header-cell :width="1" text-align="right">Grade</sui-table-header-cell>
+                <!-- <sui-table-header-cell :width="1" text-align="right">Weight</sui-table-header-cell> -->
               </sui-table-row>
             </sui-table-header>
             <sui-table-body>
@@ -26,6 +27,7 @@
               >
                 <sui-table-cell>{{assignment.name}}</sui-table-cell>
                 <sui-table-cell text-align="right">{{ assignment.grade }}</sui-table-cell>
+                <!-- TODO: Display weight <sui-table-cell text-align="right">{{ stringy() }}</sui-table-cell> -->
               </sui-table-row>
             </sui-table-body>
           </sui-table>
@@ -156,7 +158,10 @@ export default {
     },
     incrementPage(){
       this.page = this.page +1;
-    }
+    },
+    stringy(){
+      console.log(JSON.stringify(this.students, null,4));
+    },
   },
 };
 </script>

@@ -318,7 +318,12 @@ ________________________________________________________________________________
 class Assignment(models.Model):
     name = models.CharField(max_length = 250,default="Assignment")
     topic = models.ForeignKey(Topic,related_name='topic_assignment',on_delete=models.CASCADE, default=None)
-    weight = models.IntegerField(default=1)
+    weight = models.FloatField(
+        null=True,
+        blank=True,
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
 
     def __str__(self):
         # return self.name
