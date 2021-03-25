@@ -596,8 +596,18 @@ ________________________________________________________________________________
 
 class CompetencyThreshold(models.Model):
     course = models.OneToOneField(Course, on_delete=models.CASCADE) # The class that these thresholds apply to
-    competency_threshold = models.IntegerField(default=33) # The threshold to achieve competency
-    mastery_threshold = models.IntegerField(default=66) # The threshold to achieve mastery
+    competency_threshold = models.FloatField(
+        null=True,
+        blank=True,
+        default=1,
+        validators=[MinValueValidator(0)]
+    ) # The threshold to achieve competency
+    mastery_threshold = models.FloatField(
+        null=True,
+        blank=True,
+        default=2,
+        validators=[MinValueValidator(0)]
+    ) # The threshold to achieve mastery
     
 
 """
