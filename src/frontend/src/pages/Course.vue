@@ -93,6 +93,7 @@
       :letterGrade="letterGrade"
       :numNodesMast="numNodesMast"
       :numNodesComp="numNodesComp"
+      :graphData="graphData"
       @onClose="courseGradeModalIsOpen = false; $emit('onClose');" />
   </div>
 </template>

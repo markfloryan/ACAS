@@ -33,6 +33,7 @@ request_override_map_delete = {
     'delete': 'delete'
 }
 
+gitpull = api_views.gitPull
 course_list = api_views.CourseViewSet.as_view(request_override_map)
 competency_threshold_list = api_views.CompetencyThresholdViewSet.as_view(request_override_map)
 grade_threshold_list = api_views.GradeThresholdViewSet.as_view(request_override_map)
@@ -43,6 +44,7 @@ topic_to_topic_list = api_views.TopicToTopicViewSet.as_view(request_override_map
 resources_list = api_views.ResourcesViewSet.as_view(request_override_map)
 settings_list = api_views.SettingsViewModel.as_view(request_override_map)
 student_to_course_list = api_views.StudentToCourseViewSet.as_view(request_override_map)
+student_progress_list = api_views.studentProgress
 student_to_topic_list = api_views.StudentToTopicViewSet.as_view(request_override_map)
 topic_to_topic_list = api_views.TopicToTopicViewSet.as_view(request_override_map)
 assignment_list = api_views.AssignmentViewSet.as_view(request_override_map)
@@ -67,6 +69,8 @@ router.register(r'studenttoassignments', api_views.StudentToAssignmentViewSet,'s
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^api/gitpull/', gitpull, name='git-pull'),
+    
 
     # Courses
     url(r'^api/courses/(?P<pk>[0-9]+)/competency-threshold', competency_threshold_list, name='course-competency-threshold'),
@@ -96,6 +100,8 @@ urlpatterns = [
     url(r'^api/topics/(?P<pk>[0-9]+)', topic_list, name='topic-detail'),
     url(r'^api/topics/', topic_list, name='topic-list'),
 
+    url(r'^api/student/course/(?P<pk>[0-9]+)/progress',
+        student_progress_list, name='student-progress'),
     url(r'^api/student/course/(?P<pk>[0-9]+)',
         student_to_course_list, name='student-to-course-detail'),
     url(r'^api/student/course/', student_to_course_list,

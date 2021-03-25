@@ -10,14 +10,9 @@ try:
     API_DEBUG = (os.environ['DEBUG'] != 'False')
 except:
     API_DEBUG = False
-PROF_DEBUG_TOKEN = '12345'
-STUD_DEBUG_TOKEN = '54321'
 
-# Try to get CLIENT_ID from the CLIENT_ID environment variable, otherwise use the specified default
-try:
-    CLIENT_ID = os.environ['CLIENT_ID']
-except:
-    CLIENT_ID = '250281465409-dohlj94rioi60eiqqc2mdmsh4klgcpck.apps.googleusercontent.com'
+# Try to get CLIENT_ID from the CLIENT_ID environment variable
+CLIENT_ID = os.environ['CLIENT_ID']
 
 def get_bearer_token(auth_str):
     if auth_str is None:
@@ -40,20 +35,6 @@ class GoogleOAuth(authentication.BaseAuthentication):
         if token is None:
             auth_str = request.META.get('HTTP_AUTHORIZATION')
             token = get_bearer_token(auth_str)
-
-        if API_DEBUG and token == PROF_DEBUG_TOKEN:
-            try:
-                user = Student.objects.get(email="mrf8t@virginia.edu")
-                return (user, None)
-            except Student.DoesNotExist:
-                return (None, None)
-
-        elif API_DEBUG and token == STUD_DEBUG_TOKEN:
-            try:
-                user = Student.objects.get(email="jsnow@virginia.edu")
-                return (user, None)
-            except Student.DoesNotExist:
-                return (None, None)
 
         if token is None:
             return None

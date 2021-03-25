@@ -350,50 +350,28 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     # This method changed a lot. Need to verify it works
     def post(self, request, format=None, pk=None):
-        PROF_DEBUG_TOKEN = '12345'
-        STUD_DEBUG_TOKEN = '54321'
         token = request.data.get('id_token')
         params = {'id_token': token }
 
         data = {}
 
-        if API_DEBUG and token == PROF_DEBUG_TOKEN:
-            # Set up the user's data
-            data = {
-                'first_name': 'Mark',
-                'last_name': 'Floryan',
-                'email': 'mrf8t@virginia.edu',
-                'id_token': PROF_DEBUG_TOKEN,
-                'is_professor': 't'
-            }
+        # Call out to google here to get profile info
+        URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
+        r = requests.post(url=URL, params=params)
+        fullProfile = r.json()
 
-        elif API_DEBUG and token == STUD_DEBUG_TOKEN:
+        #print(fullProfile)
 
-            data = {
-                'first_name': 'Jonny',
-                'last_name': 'Studential',
-                'email': 'js@virginia.edu',
-                'id_token': STUD_DEBUG_TOKEN,
-                'is_professor': 'f'
-            }
-        else:
-            # Call out to google here to get profile info
-            URL = "https://www.googleapis.com/oauth2/v3/tokeninfo"
-            r = requests.post(url=URL, params=params)
-            fullProfile = r.json()
-
-            #print(fullProfile)
-
-            # Setup user data for the new account based on google profile info
-            data = {
-                'first_name': fullProfile.get('given_name'),
-                'last_name': fullProfile.get('family_name'),
-                'email': fullProfile.get('email'),
-                'id_token': params['id_token'],
-                'is_professor': 'f',
-                'username': fullProfile.get('email') # TODO: Temp username fix
-            }
-            print(data['username'])
+        # Setup user data for the new account based on google profile info
+        data = {
+            'first_name': fullProfile.get('given_name'),
+            'last_name': fullProfile.get('family_name'),
+            'email': fullProfile.get('email'),
+            'id_token': params['id_token'],
+            'is_professor': 'f',
+            'username': fullProfile.get('email') # TODO: Temp username fix
+        }
+        print(data['username'])
 
         #If the id_token was bad and did not create a profile for us, return an error
         if data['email'] is None:
