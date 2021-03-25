@@ -150,8 +150,7 @@ def update_topic_grade(student_pk=None, topic_pk=None):
 
     # Sums students grades
     for sta in student_to_assignments:
-        sum_grades += sta.grade * sta.assignment.weight # Add grade while taking into account the wight
-        #sum_assignment_weights += sta.assignment.weight
+        sum_grades += sta.grade
 
     # Sums the weight of assignments even if the student doens't have a grade
     topic_assignments = Assignment.objects.filter(topic=topic_pk)
