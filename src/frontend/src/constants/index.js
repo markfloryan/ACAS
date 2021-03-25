@@ -7,7 +7,7 @@ const IN_PROD = false;
 // Constants
 export const toastTypes = ['success', 'error', 'info']; // info is default
 export const DEBUG_TOKEN = '12345';
-const DEVELOP_API = 'http://spt-acas.com:8000/api';
+const DEVELOP_API = 'http://hotcake.cs.virginia.edu:8000/api';
 
 // API URL
 export const API_URL = IN_PROD ? PRODUCTION_API : DEVELOP_API;
