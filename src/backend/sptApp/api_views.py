@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.core.exceptions import *
 from django.contrib.auth import login
-
+from datetime import datetime
 
 # Making calls to google (get and post)
 import requests
@@ -59,9 +59,24 @@ from .serializers import *
 # GradeScope
 from sptApp.gradescopeAPI.pyscope.pyscope import *
 
+# Development Integration
+import os
 
 ''' API ENDPOINTS '''
 
+'''
+gitpull
+api/gitpull
+'''
+
+@csrf_exempt
+@api_view(['GET'])
+def gitPull(request):
+    os.system("cd ../ACAS && git pull")
+    os.system("cd ../ACAS/src/backend/sptApp/gradescopeAPI && git pull")
+    return JsonResponse({
+        'ok': True
+    })
 
 '''
 ______________________________________________________________________________________________      Course
@@ -1731,6 +1746,32 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
             return successful_edit_response(serializer.data)
 
 '''
+studentProgress
+api/student/course/(?P<pk>[0-9]+)/progress
+'''
+
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated])
+def studentProgress(request,pk):
+    user = request.user
+
+    try:
+        course = Course.objects.get(pk=pk)
+        stc = StudentToCourse.objects.get(course=course, student=user)
+        
+    except Course.DoesNotExist:
+        return object_not_found_response()
+    print("Hey!")
+
+    stc_serializer = StudentToCourseSerializer(stc)
+    progressReport = {}
+    progressReport['stc'] = stc_serializer.data
+    #progressReport.update(stc_serializer.data)
+    return successful_create_response(progressReport)
+
+'''
 ______________________________________________________________________________________________
 CourseRosterUpload: Functionality for uploading a file with existing grades
 ______________________________________________________________________________________________
@@ -2066,7 +2107,7 @@ __________________________________________________
 @csrf_exempt
 @api_view(['GET'])
 @authentication_classes([GoogleOAuth])
-@permission_classes([IsAuthenticated & IsProfessor])
+@permission_classes([IsAuthenticated])
 def courseGradescopeUpload(request,pk):
 
     course = None
@@ -2079,7 +2120,9 @@ def courseGradescopeUpload(request,pk):
         })
 
     conn = GSConnection()
-    #conn.login('email', 'pass')
+    gradescope_email = os.getenv('GRADESCOPE_EMAIL')
+    gradescope_password = os.getenv('GRADESCOPE_PASSWORD')
+    conn.login(gradescope_email, gradescope_password)
 
     print(conn.state)
     conn.get_account()
@@ -2111,8 +2154,32 @@ def courseGradescopeUpload(request,pk):
         f.write(grades)
         f.flush()
         f.seek(0)
-        headers = {'Authorization' : request.headers['Authorization']}
+        # Get a professor token to upload the grades. TODO: I'm not sure how long these tokens are valid for. I think they update over time? This would mean if we select an inactive professor we wouldn't be able to upload the grades
+        try:
+            professor = Student.objects.filter(is_professor=True)[0]
+        except Course.DoesNotExist: # TODO: This shouldn't be Course.
+            return JsonResponse({
+                'ok':False,
+                'errors':['Could not find valid professor {}'. format(pk)]
+            })
+        headers = {'Authorization' : 'Bearer ' + professor.id_token}
         r = requests.post(url, headers=headers, files = {'csv': ('grades.csv', f, 'text/csv', {'Expires': '0'})})
+        print(r)
+        print(r.reason)
+        if r.reason == 'Unauthorized':
+            return JsonResponse({
+                'ok':False,
+                'errors':['Unauthorized grade upload']
+            })
+        elif not r.ok:
+            return JsonResponse({
+                'ok':False,
+                'errors':['Failed to upload grades']
+            })
+    
+    course.grades_updated = datetime.now()
+    course.save()
+
     return JsonResponse({
         'ok': r.text
     })

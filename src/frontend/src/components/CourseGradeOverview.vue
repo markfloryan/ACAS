@@ -21,12 +21,11 @@
             </sui-table-row>
             <sui-table-row>
                 <!-- 
-                    TODO: Post next grade
                     Layout looks pretty janky too. Better way?
                 -->
-                <sui-table-cell>Next Grade</sui-table-cell>
-                <sui-table-cell> ? </sui-table-cell>
-                <sui-table-cell> ? </sui-table-cell>
+                <sui-table-cell>Next Grade ({{nextGrade}})</sui-table-cell>
+                <sui-table-cell> {{ this.getMaster(this.nextGrade) }} </sui-table-cell>
+                <sui-table-cell> {{ this.getComp(this.nextGrade) }} </sui-table-cell>
             </sui-table-row>
             </sui-table-body>
         </sui-table>
@@ -121,6 +120,7 @@ export default {
   },
   data() {
     return {
+      nextGrade: '',
       competency_thresholds: {},
       grade_thresholds: {},
       letters: ['A','B','C','D'],
@@ -131,6 +131,7 @@ export default {
   mounted() {
     this.retrieveResources();
     this.setGradeHighlightIndex();
+    
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
@@ -139,7 +140,7 @@ export default {
       axios.get(`${API_URL}/courses/${this.id}/competency-threshold`, { headers: { Authorization: `Bearer ${profile.auth.profile.id_token}` } })
         .then((comp) => {
           this.competency_thresholds = comp.data.result;
-          this.competency_thresholds['course'] = {};
+          this.competency_thresholds['course'] = {}; // This can probably be removed
           delete this.competency_thresholds.pk;
           delete this.competency_thresholds.course;
         });
@@ -148,8 +149,8 @@ export default {
           this.grade_thresholds = grade.data.result;
           delete this.grade_thresholds.pk;
           delete this.grade_thresholds.course;
+          this.setNextGrade();
         });
-    
     },
     setGradeHighlightIndex() {
       if (this.letterGrade.length > 1) {
@@ -164,7 +165,48 @@ export default {
           this.letter_pos = i;
       }
         
-    }   
+    },
+    setNextGrade() {
+      let keys = Object.keys(this.grade_thresholds);
+      let vals = Object.values(this.grade_thresholds);
+      for (let i = 0; i < keys.length; i+=2) {
+        if (vals[i] = this.numNodesMast && vals[i+1] == this.numNodesComp)
+          if (i != 0) {
+            let temp = keys[i-1].split('_');
+            if (temp.length == 2)
+              this.nextGrade = temp[0].toUpperCase();
+            else
+              this.nextGrade = temp[0].toUpperCase()+this.strToAdd(temp[1]);
+          } else
+            this.nextGrade = 'A+';
+      }
+    },
+    strToAdd(str) {
+      if (str === 'plus')
+        return '+';
+      if (str === 'minus')
+        return '-';
+      return '';
+    },
+    addToStr(add) {
+      if (add === '+')
+        return '_plus';
+      if (add === '-')
+        return '_minus';
+      return '';
+    },
+    getComp(grade) {
+      let str = grade.substring(0,1).toLowerCase();
+      if (grade.length > 1)
+        str += this.addToStr(grade.substring(1,2));
+      return this.grade_thresholds[str+'_competency'];
+    }, 
+    getMaster(grade) {
+      let str = grade.substring(0,1).toLowerCase();
+      if (grade.length > 1)
+        str += this.addToStr(grade.substring(1,2));
+      return this.grade_thresholds[str+'_mastery'];
+    }
   }
 };
 

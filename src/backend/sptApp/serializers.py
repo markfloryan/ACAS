@@ -284,6 +284,17 @@ class StudentToCourseSlimSerializer(SecureModelSerializer):
         )
         depth = 1
 
+# TODO: Clean up progress request with a neat serializer
+#class StudentProgressSerializer(SecureModelSerializer):
+#    class Meta:
+#        model = StudentToCourse
+#        fields = (
+#            'pk',
+#            'student',
+#            'course',
+#            'grade',
+#        )
+#        depth = 1
 
 class ResourcesSerializer(SecureModelSerializer):
 
