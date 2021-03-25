@@ -18,7 +18,7 @@ const actions = {
         callback: () => {
           gapi.auth2 // Note: apply_deployment_vars.sh will update the client_id when during the production docker build
             .init({  // The script will break if the client_id string is changed such that it is no longer on its own line.
-              client_id: '250281465409-v94enoqrc5p1gr7eic9fo54ss1oetjhe.apps.googleusercontent.com', // You can change the string itself
+              client_id: '250281465409-dohlj94rioi60eiqqc2mdmsh4klgcpck.apps.googleusercontent.com', // You can change the string itself
             }) // But do not put this closing curly brace and parenthesis on the same line as the client_id or else the production build will break
             .then(() => {
               resolve();
@@ -141,62 +141,6 @@ const actions = {
     });
   },
 
-  // backdoor Sign in for floryan
-  debugProfSignIn({ dispatch, commit }) {
-    return new Promise((resolve, reject) => {
-      // verify token with a backend server (identify user)
-      dispatch('verifyToken', '12345')
-        .then(profile => {
-          // Gather settings
-          axios
-            .get(`${API_URL}/settings/`, { headers: { Authorization: 'Bearer 12345' } })
-            .then(response => {
-              const settings = response.data.result;
-              commit('settings/colorChange', settings.color, {
-                root: true,
-              });
-              commit('signIn', profile);
-              resolve();
-            })
-            .catch(response => {});
-        })
-        .catch(err => {
-          console.log(err);
-          dispatch('signOut').then(() => {
-            reject();
-          });
-        });
-    });
-  },
-
-  // backdoor Sign in for dummy student
-  debugStudSignIn({ dispatch, commit }) {
-    return new Promise((resolve, reject) => {
-      // verify token with a backend server (identify user)
-      dispatch('verifyToken', '54321')
-        .then(profile => {
-          // Gather settings
-          axios
-            .get(`${API_URL}/settings/`, { headers: { Authorization: 'Bearer 54321' } })
-            .then(response => {
-              const settings = response.data.result;
-              commit('settings/colorChange', settings.color, {
-                root: true,
-              });
-              commit('signIn', profile);
-              resolve();
-            })
-            .catch(response => {});
-        })
-        .catch(err => {
-          console.log(err);
-          dispatch('signOut').then(() => {
-            reject();
-          });
-        });
-    });
-  },
-
   // Sign in a user
   signIn({ dispatch, commit }) {
     return new Promise((resolve, reject) => {
@@ -262,19 +206,17 @@ const actions = {
     return new Promise((resolve, reject) => {
 
       var reject = false;
-      if(token != 12345 && token != 54321){
-        try {
-          token = gapi.auth2
-            .getAuthInstance()
-            .currentUser.get()
-            .getAuthResponse().id_token;
-        } catch (e) {
-          reject = true;
-        }	
-        if (!token) {
-          reject = true;
-        } 
-      }
+      try {
+        token = gapi.auth2
+          .getAuthInstance()
+          .currentUser.get()
+          .getAuthResponse().id_token;
+      } catch (e) {
+        reject = true;
+      }	
+      if (!token) {
+        reject = true;
+      } 
       
 
       /* This is where the verification is taking place */

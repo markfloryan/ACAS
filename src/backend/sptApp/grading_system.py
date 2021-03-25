@@ -28,7 +28,7 @@ def meets_grade_threshold(grade,grade_threshold,num_competent,num_mastery):
         return True
 
     # True If we meet competency threshold through extra mastered topics
-    elif num_mastery - getattr(grade_threshold, grade + "_mastery") >= getattr(grade_threshold, grade + "_competency"):
+    elif num_mastery - getattr(grade_threshold, grade + "_mastery") + num_competent >= getattr(grade_threshold, grade + "_competency"):
         return True
 
     return False

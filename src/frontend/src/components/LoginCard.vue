@@ -92,7 +92,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('auth', ['signIn', 'signUp', 'debugProfSignIn', 'debugStudSignIn']),
+    ...mapActions('auth', ['signIn', 'signUp']),
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     navigateSignUp() {
       //sets url to signup
