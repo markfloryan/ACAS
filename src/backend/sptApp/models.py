@@ -658,8 +658,9 @@ ________________________________________________________________________________
 
 class Settings(models.Model):
     color = models.CharField(max_length=250)
-    nickname = models.CharField(max_length=250, null=True, blank=True)
+    nickname = models.CharField(max_length=250, null=True, blank=True) # TODO (low-refactor): Nickname isn't used anywhere
     user = models.OneToOneField(Student, on_delete=models.CASCADE)
+    public_leaderboard = models.BooleanField(default=False) # True if student ops in to display their name on leaderboards
 
     def __str__(self):
         return "Settings for " + self.user.__str__()
@@ -708,3 +709,13 @@ class TopicToTopic(models.Model):
 
     def ancestor_name(self):
         return self.ancestor_node.name
+
+class Helper(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, default=None)
+    topic_node = models.ForeignKey(
+        Topic, on_delete=models.CASCADE)
+
+class Helpee(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, default=None)
+    topic_node = models.ForeignKey(
+        Topic, on_delete=models.CASCADE)

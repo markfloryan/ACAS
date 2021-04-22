@@ -22,8 +22,13 @@
         </div>
         <br/>
 
+        <div>Show Name on Leaderboards:<br>
+          <input type="checkbox" v-model="leaderboard"/>
+        </div>
+        <br/>
+
         <router-link :to="'/'">
-          <button class="create-class btn btn-create"  style="height:8%;width:10%;margin-top:5px;">
+          <button class="create-class btn btn-create"  style="margin-top:5px;">
             Home
           </button>
         </router-link>
@@ -53,6 +58,7 @@ export default {
       //color is a hex val, nickname will later be
       colors: '#FFFFFF',
       nickname: 'stuff',
+      leaderboard: false, // TODO: This always comes in as false. Need to query for actual value
       sites_and_courses: {},
       createGrade:{},
       updateGrade:{},
@@ -91,6 +97,7 @@ export default {
       const data = {
         colors: this.colors,
         nickname: this.nickname,
+        leaderboard: this.leaderboard,
       };
       //sends settings data to the students settings page.
       axios.put(`${API_URL}/settings/`, data, { headers: { Authorization: `Bearer ${profile.auth.profile.id_token}` } })

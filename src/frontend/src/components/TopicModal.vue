@@ -30,6 +30,12 @@
             @click="context = 'studentgrades'"
             :style="{ color: context === 'studentgrades' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
           >View Grades</span>
+
+          <span
+            class="link"
+            @click="context = 'collaboration'"
+            :style="{ color: context === 'collaboration' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
+          >Collaboration</span>
           <!-- Only show for professor -->
           <span
             v-if="role === 'professor'"
@@ -82,6 +88,12 @@
             :data="data"
             :topicId="data.topic.id"
           />
+          <TopicCollaboration
+            v-if="context === 'collaboration'"
+            :role="role"
+            :data="data"
+            :topicId="data.topic.id"
+          />
         </div>
       </template>
       <div v-else>
@@ -99,6 +111,7 @@ import TopicStudentGrade from '@/components/TopicStudentGrade';
 import TopicTakeQuiz from '@/components/TopicTakeQuiz';
 import TopicStudentGrades from '@/components/TopicStudentGrades';
 import TopicAddGrade from '@/components/TopicAddGrade';
+import TopicCollaboration from '@/components/TopicCollaboration';
 import { API_URL } from '@/constants';
 
 export default {
@@ -109,6 +122,7 @@ export default {
     TopicTakeQuiz,
     TopicStudentGrades,
     TopicAddGrade,
+    TopicCollaboration,
   },
   props: {
     role: {

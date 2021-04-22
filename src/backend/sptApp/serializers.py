@@ -324,3 +324,23 @@ class ClassGraphSerializer(SecureModelSerializer):
             'letterGrade', # TODO: change serializer to update REST
         )
         depth = 2
+
+class HelperSerializer(SecureModelSerializer):
+    class Meta:
+        model = Helper
+        fields = (
+            'pk',
+            'student',
+            'topic_node',
+        )
+        depth = 1
+
+class HelpeeSerializer(SecureModelSerializer):
+    class Meta:
+        model = Helpee
+        fields = (
+            'pk',
+            'student',
+            'topic_node',
+        )
+        depth = 1

@@ -1495,13 +1495,16 @@ class SettingsViewModel(viewsets.ModelViewSet):
     def put(self, request, format=None, pk=None):
         try:
             student = request.user
-            students_settings = self.model.objects.get(user=student)
+            students_settings = self.model.objects.get(user=student) # TODO (low-refactor): students_settings is unused
             result = self.model.objects.filter(user=student)
             colors = request.data.get("colors")
             result.update(
                 color=colors["hex"],
-                nickname=request.data.get("nickname")
+                nickname=request.data.get("nickname"),
+                public_leaderboard=request.data.get("leaderboard")
             )
+            if API_DEBUG:
+                print("[DEBUG] Updated settings. leaderboard value=" + str(request.data.get("leaderboard")))
         except self.model.DoesNotExist:
             return object_not_found_response()
 
@@ -2582,3 +2585,62 @@ def assignmentQuizUpload(request,pk):
             'ok': False,
             'errors': errors
         })
+
+
+# TODO: Change this to what it reall is later
+'''
+__________________________________________________  Get
+    url: GET :: <WEBSITE>/api/collaboration/helper
+    function: Fetches helper data
+__________________________________________________
+''' 
+class HelperViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [ IsAuthenticated & ( IsProfessor | IsOwner ) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = Helper.objects.all()
+    serializer_class = HelperSerializer
+    model = Helper
+
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/collaboration/helper OR
+          GET :: <WEBSITE>/api/collaboration/helper/<STUDENT_ID> OR
+     function: Retrieves collaboration data
+    __________________________________________________
+    '''
+    def get(self, request, format=None, pk=None):
+        #grab that user's primary key
+        userId = request.user.pk
+
+        #get the courses associated with that student, professor, or TA
+        courses = Course.objects.filter(courses__student__pk=userId) | Course.objects.filter(professor=userId) | Course.objects.filter(teaching_assistants=userId)
+        helpers = Helper.objects.filter(student__pk=userId)
+
+        #handle case where user is requesting one specific course
+        if pk is not None:
+            try:
+                helpers = helpers.filter(pk=pk)
+                serializer = self.serializer_class(helpers, many=True)
+
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        else:
+            #otherwise just return all helpers associated with this user
+            serializer = self.serializer_class(helpers, many=True)
+
+        return successful_create_response(serializer.data)
+
+    def delete(self, request, format=None, pk=None):
+        return unauthorized_access_response()
+
+    def post(self, request, format=None, pk=None):
+        return unauthorized_access_response()
+
+    def put(self, request, format=None, pk=None):
+        return unauthorized_access_response()
+
+

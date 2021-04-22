@@ -174,7 +174,7 @@ export default {
     this.retrieveResources();
     this.setGrades();
     this.setDates();
-    console.log(JSON.stringify(this.graphData, null,4));
+    //console.log(JSON.stringify(this.graphData, null,4));
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),

@@ -60,6 +60,8 @@ students_in_topic = api_views.CourseTopicToStudentViewSet.as_view(request_overri
 search_list = api_views.SearchViewSet.as_view(request_override_map)
 student_to_assignment_list = api_views.StudentToAssignmentViewSet.as_view(request_override_map_delete)
 
+helper_list = api_views.HelperViewSet.as_view(request_override_map)
+
 router = routers.DefaultRouter()
 # Allows RestAPI support for studentToAssignments objects
 router.register(r'studenttoassignments', api_views.StudentToAssignmentViewSet,'studenttoassignments')
@@ -170,4 +172,9 @@ urlpatterns = [
     # Student to Assignment (delete functionality)
     url(r'api/studenttoassignments/(?P<studentpk>[0-9]+)/(?P<assignmentpk>[0-9]+)',
         student_to_assignment_list, name='student-to-assignment-list'),
+
+    ### Collaboration ###
+    # Helper
+    url(r'^api/collaboration/helper/(?P<pk>[0-9]+)',
+        helper_list, name='helper-detail'),
 ]
