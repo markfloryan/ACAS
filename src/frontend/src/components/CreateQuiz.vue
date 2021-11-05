@@ -1,9 +1,8 @@
 <template>
     <div>
-        <div class="quizCreator" v-if="page < 2">
+        <div class="quizCreator" v-if="page < 1">
             <div class="title" style="padding:10px">
                 <h3 v-if="page == 0">Create quizzes</h3>
-                <h3 v-if="page == 1">Quiz Info</h3>
             </div> 
             <div class="content" v-if="page === 0">
                 <h4>Select a Topic</h4>
@@ -28,33 +27,7 @@
                     />
                 </sui-form-field>
             </div>
-            <div class="content" v-if="page === 1">
-                <sui-form-field>
-                    <h4>Select and Open and Close Date for the Quiz</h4>
-                    <h5>Open Date</h5>
-                    <input v-model="openDate" placeholder="DatePicker">
-                    <h5>Close Date</h5>
-                    <input v-model="closeDate" placeholder="DatePicker">
-                    <h4>Type of Quiz</h4>
-                    <sui-dropdown
-                        placeholder="Select type of quiz"
-                        :options="quizTypes"
-                        selection
-                        search
-                        v-model="quizPK"
-                    />
-                </sui-form-field>
-            </div>
-            <div class="buttons">
-                <button
-                    :class="disableBack ? 'btn btn-disabled' : 'btn btn-primary edit-btn'"
-                    :disabled="disableBack ? true : false"
-                    :style="disableBack ? '' : returnPrimaryButtonStyle"
-                    data-toggle="tooltip"
-                    data-placement="bottom"
-                    title="Previous Step"
-                    @click="prevPage()"
-                >Back</button>
+            <div class="buttons">>
                 <button
                     class="btn btn-primary edit-btn"
                     :style="returnPrimaryButtonStyle"
@@ -63,10 +36,10 @@
                     data-placement="bottom"
                     title="Next Step"
                     @click="nextPage()"
-                >Next</button>
+                >Create Quiz</button>
             </div>
         </div>
-        <div v-if="page >= 2">
+        <div v-if="page >= 1">
             <QuestionWriter :topicPK="topicPK" :assignmentPK="assignmentPK"></QuestionWriter>
         </div>
     </div>
@@ -138,7 +111,7 @@ export default {
         this.disableBack = false;
       }
 
-      if (this.page == 2) {
+      if (this.page == 1) {
         this.openToast();
         this.setToastInfo({
           type: 'success',
@@ -147,14 +120,6 @@ export default {
           duration: 10000,
         });
         //this would then call save or create quiz or whatever
-      }
-    },
-    prevPage() {
-      this.page -= 1;
-      if(this.page == 0) {
-        this.disableBack = true;
-      } else {
-        this.disableBack = false;
       }
     },
     validate() {

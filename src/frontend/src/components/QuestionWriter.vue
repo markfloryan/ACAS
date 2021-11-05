@@ -3,7 +3,7 @@
         <div class="title" style="padding:10px">
           <h3>Add a Question</h3>
         </div>
-        <div class="content">
+        <div class="selector">
           <sui-form-field>
             <sui-dropdown
                 placeholder="Select type of question"
@@ -14,16 +14,11 @@
             />
           </sui-form-field>
         </div>
-        <div class="buttons">
-          <button
-              class="btn btn-primary edit-btn"
-              :style="returnPrimaryButtonStyle"
-              style="float: right;"
-              data-toggle="tooltip"
-              data-placement="bottom"
-              title="Add"
-              @click="writeQuestion()"
-          >Add Question</button>
+        <div class="content">
+          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1"></MultipleChoiceCreate>
+          <FreeResponseCreate v-if="questionPK===2"></FreeResponseCreate>
+          <CodingCreate v-if="questionPK===3"></CodingCreate>
+          <CodeExecutionCreate v-if="questionPK===4"></CodeExecutionCreate>
         </div>
     </div>
 </template>
@@ -32,10 +27,13 @@
 import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
 import { API_URL } from '@/constants';
-import Dashboard from '../pages/Dashboard.vue';
+import MultipleChoiceCreate from '@/components/MultipleChoiceCreate';
+import FreeResponseCreate from '@/components/FreeResponseCreate';
+import CodingCreate from '@/components/CodingCreate';
+import CodeExecutionCreate from '@/components/CodeExecutionCreate';
 
 export default {
-  components: { Dashboard},
+  components: { MultipleChoiceCreate, FreeResponseCreate, CodingCreate, CodeExecutionCreate },
   /*
   Defines the data used by the component
   */
@@ -46,7 +44,7 @@ export default {
     };
   },
   mounted() {
-    this.questionTypes = [{text: 'Multiple Choice', value: 0}, {text: 'Multiple Select', value: 1}, {text: 'Free Response', value: 2}, {text: 'Coding', value: 3}, {text: 'Custom', value: 4}];
+    this.questionTypes = [{text: 'Multiple Choice', value: 0}, {text: 'Multiple Select', value: 1}, {text: 'Free Response', value: 2}, {text: 'Implementation', value: 3}, {text: 'Execution', value: 4}];
   },
   watch: {
   },
@@ -66,18 +64,6 @@ export default {
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
-    validate() {
-
-    },
-    writeQuestion() {
-      this.openToast();
-      this.setToastInfo({
-        type: 'error',
-        title: 'Error',
-        message: 'Not Implemented Yet',
-        duration: 10000,
-      });
-    }
   } 
 };
 </script>
@@ -87,18 +73,18 @@ export default {
     display: grid;
     grid-template-areas:
         'title'
-        'content'
-        'buttons';
+        'selector'
+        'content';
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 8fr 1fr;
+    grid-template-rows: 1fr 1fr 15fr
 }
 .title {
     grid-area: title;
     padding-left: 10pt;
     padding-right: 10pt;
 }
-.buttons {
-    grid-area: buttons;
+.selector {
+    grid-area: selector;
     padding-left: 10pt;
     padding-right: 10pt;
 }
