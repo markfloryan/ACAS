@@ -307,7 +307,7 @@ class StudentViewSet(viewsets.ModelViewSet):
      url: GET :: <WEBSITE>/api/students/?id_token=
      function: Signs a user in by checking if they exist in the DB
     __________________________________________________
-    '''
+    ''' 
     # If no pk is specified, get the current user. Otherwise, get the user specified by the pk
     def get(self, request, format=None, pk=None):
 
@@ -976,6 +976,8 @@ class QuizViewSet(viewsets.ModelViewSet):
       url: POST :: <WEBSITE>/api/quizzes/
       function: Creates a new quiz
     '''
+    # TODO figure out how to use pools (Idea is they are a ratio of questions to be asked during a graded quiz time, and used
+    # to weight a random variable during practice time)
     def post(self, request, format=None, pk=None):
         if pk is None:
             data = json.loads(request.body)
@@ -988,14 +990,10 @@ class QuizViewSet(viewsets.ModelViewSet):
                 if not serializer.is_valid():
                     return invalid_serializer_response(serializer.errors)
                 serializer.save()
-
+                
                 assignment = Assignment.objects.get(pk=quiz["assignment"])
                 newly_created_quiz = Quiz.objects.get(
-                    assignment=assignment,
-                    pool=quiz["pool"],
-                    practice_mode=quiz["practice_mode"],
-                    next_open_date=quiz["next_open_date"],
-                    next_close_date=quiz["next_close_date"]
+                    assignment=assignment
                     )
                 students_in_assignment = StudentToAssignment.objects.filter(
                     assignment=assignment)
@@ -1011,7 +1009,6 @@ class QuizViewSet(viewsets.ModelViewSet):
                             student_to_assignment=student_to_assignment
                         )
                         student_to_quiz.save()
-
             return successful_create_response(request.data)
         else:
             return colliding_id_response()
@@ -1175,6 +1172,32 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
             return successful_edit_response(serializer.data)
 
 
+#Quiz Question uploading feature
+#/api/questionFileUpload/<pk>
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated & ( IsProfessor | ReadOnly)])
+def questionFileUpload(request,pk):
+    try:
+        implementation = request.FILES['implementation']
+    except MultiValueDictKeyError:
+        return malformed_request_response(fields={'implementation': "No implementation found in request"})
+    try:
+        harness = request.FILES['harness']
+    except MultiValueDictKeyError:
+        return malformed_request_response(fields={'harness': "No harness found in request"})
+    try:
+        question = QuizQuestion.objects.get(pk=pk)
+    except QuizQuestion.DoesNotExist:
+        return malformed_request_response(fields={
+            'ok':False,
+            'error':'Could not find Quiz Question with primary key {}'.format(pk)
+        })
+    print(implementation)
+    print(harness)
+    return successful_create_response(request.data)
+
 
 class QuizInterfaceViewSet(viewsets.ModelViewSet):
     authentication_classes = [GoogleOAuth]
@@ -1240,7 +1263,7 @@ __________________________________________________
             response_data['info'] = "Submitting this question is forbidden"
             return forbidden_response(response_data)
 
-
+        # TODO add new question types to this section
         # Check if the answer was correct
         question_parameters = json.loads(quiz_question.question_parameters)
         question_type = quiz_question.question_type
@@ -1250,14 +1273,16 @@ __________________________________________________
             is_correct = (data['selection'] == question_parameters['answer'])
             submitted_answer = data['selection']
         # Select all question
-        elif question_type == 2:
+        elif question_type == 1:
             submitted_answer = data['all_selections']
             submitted_answer.sort()
             correct_answer = question_parameters['answer']
             correct_answer.sort()
             is_correct = (submitted_answer == correct_answer)
+        # Commented out as we shift away from parsons problems towards free response and coding questions
+        """         
         # Parsons problem
-        elif question_type == 3:
+         elif question_type == 3:
             is_correct = True
             submitted_answer = data['code_order']
             dependencies = question_parameters['answer']
@@ -1293,7 +1318,8 @@ __________________________________________________
                     break
             
             # Set submitted_answer to code order so that the code_order is saved in the StudentToQuizQuestion as the submitted answer
-            submitted_answer = code_order
+            submitted_answer = code_order 
+            """
 
         response_data["correct"] = is_correct
 
@@ -1640,6 +1666,7 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
     __________________________________________________
     '''
 
+    # TODO make this assign students to all assignments in that course
     def post(self, request, format=None, pk=None):
         if pk is None:
             data = request.data
@@ -2417,7 +2444,8 @@ class StudentToAssignmentViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return object_not_found_response()
 
-
+# Commented out as we are shifting to creating quizzes through a frontend builder
+"""
 #Quiz Question uploading feature
 #/api/assignmentQuizUpload/<pk>
 @csrf_exempt
@@ -2439,7 +2467,7 @@ def assignmentQuizUpload(request,pk):
         })
 
     # Define question types
-    question_types = ["0","1","2","3"] # Corresponding to multiple choice, free response, select all that apply, and parsons problems
+    question_types = ["0","1","2","3"] # Corresponding to multiple choice, multiple select, free response, and parsons problems
 
     #estimates show that we don't need to use chunks -- may need to revise this assumption if used for files > ~2.5mb.
     csv_content_raw = csv_file.read().decode('utf-8')
@@ -2455,12 +2483,12 @@ def assignmentQuizUpload(request,pk):
         csv_lines[0]=csv_lines[0].strip('\r')
     header_elements = csv_lines[0].split(',')
     multiple_choice_count = int(header_elements[0])
-    free_response_count = int(header_elements[1])
-    select_all_that_apply_count = int(header_elements[2])
+    multiple_select_count = int(header_elements[1])
+    free_response_count = int(header_elements[2])
     parsons_problem_count = int(header_elements[3])
     question_type_count = dict({"parsons": parsons_problem_count,
                                 "multiple_choice": multiple_choice_count,
-                                "select_all": select_all_that_apply_count,
+                                "multiple_select": mutliple_select_count,
                                 "free_response": free_response_count})
 
     #if the quiz already exists, delete the old one and create this new one.
@@ -2499,8 +2527,8 @@ def assignmentQuizUpload(request,pk):
                 # Strip carriage returns
                 if '\r' in option:
                     option = option.strip("\r")
-                # Check if multiple choice or select_all
-                if question_type == "0" or question_type == "2":
+                # Check if multiple choice or multiple select
+                if question_type == "0" or question_type == "1":
                     answer_pool.append(int(option)) # Add answer to pool as integer
                 else:
                     answer_pool.append(option) # Add answer to pool as string
@@ -2582,3 +2610,4 @@ def assignmentQuizUpload(request,pk):
             'ok': False,
             'errors': errors
         })
+ """

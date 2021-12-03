@@ -51,11 +51,12 @@ assignment_list = api_views.AssignmentViewSet.as_view(request_override_map)
 quiz_list = api_views.QuizViewSet.as_view(request_override_map)
 quiz_question_list = api_views.QuizQuestionViewSet.as_view(request_override_map)
 quiz_interface = api_views.QuizInterfaceViewSet.as_view(request_override_map)
+question_file_upload = api_views.questionFileUpload
 course_roster_upload = api_views.CourseRosterUpload.as_view(request_override_map)
 course_grades_upload = api_views.courseGradesUpload
 course_gradescope_upload = api_views.courseGradescopeUpload
 course_assignment_upload = api_views.assignmentUpload
-assignment_quiz_upload = api_views.assignmentQuizUpload
+# assignment_quiz_upload = api_views.assignmentQuizUpload - commented out as we are no longer doing csv uploads for quizzes
 students_in_topic = api_views.CourseTopicToStudentViewSet.as_view(request_override_map)
 search_list = api_views.SearchViewSet.as_view(request_override_map)
 student_to_assignment_list = api_views.StudentToAssignmentViewSet.as_view(request_override_map_delete)
@@ -91,7 +92,7 @@ urlpatterns = [
     url(r'^api/courseGradescopeUpload/(?P<pk>[0-9]+)', course_gradescope_upload, name='course-gradescope-upload'),
     
     url(r'^api/courseAssignmentUpload/(?P<pk>[0-9]+)', course_assignment_upload, name='course-assignment-upload'),
-    url(r'^api/assignmentQuizUpload/(?P<pk>[0-9]+)', assignment_quiz_upload, name='assignment-quiz-upload'),
+    #url(r'^api/assignmentQuizUpload/(?P<pk>[0-9]+)', assignment_quiz_upload, name='assignment-quiz-upload'), - commented out as we are no longer doing csv quiz uploads
 
     # url(r'^api/professors/', professor_list, name='professor-list'),
     # url(r'^api/professors/(?P<pk>[0-9]+)',
@@ -145,7 +146,7 @@ urlpatterns = [
     #     quiz_question_list, name='student-to-quiz-detail'),
     url(r'^api/quiz-questions/(?P<pk>[0-9]+)', quiz_question_list, name='quiz-question-detail'),
     url(r'^api/quiz-questions/', quiz_question_list, name='quiz-question-list'),
-
+    url(r'^api/questionFileUpload/(?P<pk>[0-9]+)', question_file_upload, name="question-file-upload"),
     # Submit Quiz Question
     url(r'^api/quiz-interface/(?P<pk>[0-9]+)', quiz_interface, name='quiz-interface'),
     

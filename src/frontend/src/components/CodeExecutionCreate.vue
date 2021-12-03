@@ -8,7 +8,7 @@
     <sui-form class="questionText">
         <sui-form-field>
           <label>Question Text</label>
-          <input v-model="questionText" placeholder="Question Text" type="text">
+          <input v-model="identity" placeholder="Question Text" type="text">
         </sui-form-field>
     </sui-form>
     <sui-form class="operations">
@@ -68,13 +68,15 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
+import { API_URL } from '@/constants';
 
 export default {
   data() {
     return {
       numberOfOperation: 0,
-      questionText: '',
+      identity: '',
       OperationTexts: [],
       implementation: '',
       harness: '',
@@ -88,10 +90,10 @@ export default {
     ...mapGetters('settings', ['returnPrimaryButtonStyle']),
   },
   props: {
-    select: {
-      type: Boolean,
-      required: false,
-    }
+    quiz: {
+      type: Number,
+      required: true,
+    },
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
@@ -122,7 +124,7 @@ export default {
       this.harness = this.$refs.harness.files[0];
     },
     validate() {
-      if (this.questionText == '') {
+      if (this.identity == '') {
         this.openToast();
         this.setToastInfo({
           type: 'error',
@@ -182,12 +184,78 @@ export default {
     },
     writeQuestion() {
       if(this.validate()){
-        this.openToast();
-        this.setToastInfo({
-          type: 'success',
-          title: 'Success',
-          message: 'Added question',
-          duration: 10000,
+        let questionData = {
+          'quiz-questions': [{
+            pk: 'None',
+            quiz: this.quiz,
+            question_type: 4,
+            answered_correct: 0,
+            answered_total: 0,
+            question_parameters: JSON.stringify({
+              identity: this.identity,
+              operations: this.OperationTexts,
+              implementation: this.identity + '_implementation',
+              harness: this.identity + '_harness',
+            })
+          }]
+        };
+        axios.post(`${API_URL}/quiz-questions/`,
+          questionData,
+          {
+            headers: {
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.status == '200 - OK') {   
+            axios.get(`${API_URL}/quiz-questions/`,
+              {
+                params: {
+                  quiz: this.quiz,
+                  mode: 'practice'
+                },
+                headers: {
+                  Authorization: `Bearer ${this.profile.id_token}`
+                },
+              }
+            ).then((response) => {
+              this.question = response.data.result[response.data.result.length - 1].pk;
+
+              let formData = new FormData();
+              formData.append('implementation', this.implementation);
+              formData.append('harness', this.harness); 
+              axios.post(`${API_URL}/questionFileUpload/${this.question}`,
+                formData,
+                {
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${this.profile.id_token}`
+                  },
+                }
+              ).then((response) => {
+                if(response.data.status == '200 - OK') {
+                  this.openToast();
+                  this.setToastInfo({
+                    type: 'success',
+                    title: 'Successful Creation',
+                    message: 'Question successfully added',
+                    duration: 5000,
+                  });
+                }
+              });
+            });
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Creation Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        }).catch(function(){
+          console.log('Question writing failure');
         });
       }
     }

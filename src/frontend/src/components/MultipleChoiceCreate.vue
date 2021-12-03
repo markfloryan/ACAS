@@ -121,7 +121,9 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
+import { API_URL } from '@/constants';
 import LoadingLayer from './LoadingLayer.vue';
 
 export default {
@@ -151,7 +153,11 @@ export default {
     select: {
       type: Boolean,
       required: true,
-    }
+    },
+    quiz: {
+      type: Number,
+      required: true,
+    },
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
@@ -320,7 +326,6 @@ export default {
       }
 
       let answersTokens = this.correctAnswers.split(' ');
-      console.log(answersTokens);
       if(!this.select && answersTokens.length > 1) {
         this.openToast();
         this.setToastInfo({
@@ -368,12 +373,50 @@ export default {
     },
     writeQuestion() {
       if(this.validate()){
-        this.openToast();
-        this.setToastInfo({
-          type: 'success',
-          title: 'Success',
-          message: 'Added question',
-          duration: 10000,
+        let questionData = {
+          'quiz-questions': [{
+            pk: 'None',
+            quiz: this.quiz,
+            question_type: this.select ? 1 : 0,
+            answered_correct: 0,
+            answered_total: 0,
+            question_parameters: JSON.stringify({
+              question: this.questionText,
+              variables: this.variableTexts,
+              choices: this.answerTexts,
+              answer: this.select ? this.correctAnswers.split(' ') : this.correctAnswers.substring(0,1)
+            })
+          }]
+        };
+        console.log(questionData);
+        axios.post(`${API_URL}/quiz-questions/`,
+          questionData,
+          {
+            headers: {
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.status == '200 - OK') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Creation',
+              message: 'Question successfully added',
+              duration: 5000,
+            });
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Creation Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        }).catch(function(){
+          console.log('Question writing failure');
         });
       }
     }

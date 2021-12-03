@@ -347,7 +347,7 @@ class StudentToAssignment(models.Model):
 
 """
 ______________________________________________________________________________________________
- QUIZ
+  
 ______________________________________________________________________________________________
 """
 
@@ -355,8 +355,9 @@ ________________________________________________________________________________
 callable for initializing @pool
 '''
 def quiz_jason_default():
-    return dict({"parsons": 0, "multiple_choice": 0, "select_all": 0, "free_response": 0})
+    return dict({"multiple_choice": 0, "multiple_select": 0, "free_response": 0, "implementation": 0, "execution": 0})
 
+# TODO change open and close times for quizzes, probably a day of the week and a time
 class Quiz(models.Model):
     assignment = models.OneToOneField(Assignment, related_name='quiz_assignment', on_delete=models.CASCADE, default=None)
 
@@ -364,6 +365,7 @@ class Quiz(models.Model):
     pool = models.CharField(max_length=2048, default=json.dumps(quiz_jason_default()))
 
     allow_resubmissions = models.BooleanField(default=True)
+    published = models.BooleanField(default=False)
     practice_mode = models.BooleanField(default=False)
     next_open_date = models.DateTimeField(default=datetime.now)
     next_close_date = models.DateTimeField(default=datetime.now)
@@ -379,20 +381,23 @@ class Quiz(models.Model):
     # The number of questions defined by the pool json
     # Note: a quiz pool might contain more questions than are defined by the pool json
     # E.g. a quiz pool might contain 20 questions but the pool json says to only pull 10 for the quiz. In this example, this function would return 10.
+    # Pool now used as a ratio of questions to be used as a weighted coin flip, exhaust all questions before repeating those with variables
     def get_num_questions(self):
         num = 0
         try:
             pool = json.loads(self.pool)
-            num += pool['parsons']
             num += pool['multiple_choice']
-            num += pool['select_all']
+            num += pool['multiple_select']
             num += pool['free_response']
+            num += pool['implementation']
+            num += pool['execution']
         except:
             print("Invalid json")
         
         return num
 
     # Returns true if the current time is between the open and close dates
+    # TODO update this once we create new open-close system
     def is_open(self):
         now = datetime.now(timezone.utc)
         return (now > self.next_open_date and now < self.next_close_date)
@@ -430,9 +435,16 @@ class QuizQuestion(models.Model):
 
     QUESTION_TYPES = (
         (0, 'multiple_choice'),
-        (1, 'free_response'),
-        (2, 'all_that_apply'),
-        (3, 'parsons'),
+        (1, 'multiple_select'),
+        (2, 'free_response'),
+        (3, 'implementation'),
+        (4, 'execution')
+    )
+
+    VARIABLE_TYPES = (
+        (0, "integer_range"),
+        (1, "decimal_range"),
+        (2, "discrete_set")
     )
 
     question_type = models.IntegerField(choices=QUESTION_TYPES)
@@ -446,8 +458,17 @@ class QuizQuestion(models.Model):
     Multiple Choice:
     {
         "question": <question_text>,
+        "variables": [{"name": <nameA>, "type": <typeA>, "range": <rangeA>}, ...],
         "choices": [<choiceA>, <choiceB>, <choiceC>, <choiceD>, ...],
-        "answer": <answer_index>
+        "answer": <answer_label>
+    }
+
+    Mulitple Select:
+    {
+        "question": <question_text>,
+        "variables": [{"name": <nameA>, "type": <typeA>, "range": <rangeA>}, ...],
+        "choices": [<choiceA>, <choiceB>, <choiceC>, <choiceD>, ...],
+        "answer": [<answer_label1>, <answer_lable2>,...]
     }
 
     Free Response:
@@ -456,19 +477,19 @@ class QuizQuestion(models.Model):
         "answer": <reference_answer_text>
     }
 
-    All that apply:
+    implementation:
     {
-        "question": <question_text>,
-        "choices": [<choiceA>, <choiceB>, <choiceC>, <choiceD>, ...],
-        "answer": [<answer_index1>, <answer_index2>,...]
+        "identity": <identity>,
+        "implementation": <implementation_file_name>,
+        "harness": <test_harness_file_name>
     }
 
-    Parsons:
+    execution:
     {
         "question": <question_text>,
-        "code_lines": [<line0>, <line1>, <line2>, ...],
-        "code_fixed": [T/F, T/F, T/F, ...],
-        "code_dependencies": [[], [0], [0,1], ...]
+        "operations": [<operation1>, <operation2>, <operation3>, <operation4>, ...],
+        "implementation": <implementation_file_name>,
+        "harness": <test_harness_file_name>
     }
     """
     
@@ -487,19 +508,22 @@ class QuizQuestion(models.Model):
         num_questions_by_type = json.loads(quiz.pool) # How many of each question type are allowed for the quiz
 
         # Get the pks for the questions of each type
-        parsons_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
-        select_all_pks = list(result.filter(question_type=2).order_by("id").values_list('id', flat=True))
-        #free_response_pks = result.filter(question_type=1).values_list('id', flat=True) # Commented out since free response is not implemented
+        execution_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
+        implementation_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
+        free_response_pks = result.filter(question_type=2).values_list('id', flat=True)
+        multiple_select_pks = list(result.filter(question_type=1).order_by("id").values_list('id', flat=True))
         multiple_choice_pks = list(result.filter(question_type=0).order_by("id").values_list('id', flat=True))
 
         # Limit pks to a random sample seeded by the user pk
         random.seed(student.pk)
-        parsons_pks = random.sample(parsons_pks,num_questions_by_type['parsons'])
-        select_all_pks = random.sample(select_all_pks,num_questions_by_type['select_all'])
+        execution_pks = random.sample(execution_pks,num_questions_by_type['execution'])
+        implementation_pks = random.sample(implementation_pks,num_questions_by_type['implementation'])
+        free_response_pks = random.sample(free_response_pks,num_questions_by_type['free_response'])
+        multiple_select_pks = random.sample(multiple_select_pks,num_questions_by_type['multiple_select'])
         multiple_choice_pks = random.sample(multiple_choice_pks,num_questions_by_type['multiple_choice'])
 
         # Combine primary keys
-        quiz_question_pks = parsons_pks + select_all_pks + multiple_choice_pks
+        quiz_question_pks = execution_pks + implementation_pks + free_response_pks + multiple_select_pks + multiple_choice_pks
 
         result = QuizQuestion.objects.filter(quiz=quiz,id__in=quiz_question_pks)
 

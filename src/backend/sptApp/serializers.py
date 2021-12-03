@@ -187,6 +187,7 @@ class GradeThresholdSerializer(SecureModelSerializer):
             'course',
         )
 
+# TODO update this when published and practice systems are in place
 class QuizSerializer(SecureModelSerializer):
     next_open_date = serializers.DateTimeField()
     next_close_date = serializers.DateTimeField()

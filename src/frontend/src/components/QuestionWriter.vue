@@ -15,18 +15,16 @@
           </sui-form-field>
         </div>
         <div class="content">
-          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1"></MultipleChoiceCreate>
-          <FreeResponseCreate v-if="questionPK===2"></FreeResponseCreate>
-          <CodingCreate v-if="questionPK===3"></CodingCreate>
-          <CodeExecutionCreate v-if="questionPK===4"></CodeExecutionCreate>
+          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1" :quiz="quiz"></MultipleChoiceCreate>
+          <FreeResponseCreate v-if="questionPK===2" :quiz="quiz"></FreeResponseCreate>
+          <CodingCreate v-if="questionPK===3" :quiz="quiz"></CodingCreate>
+          <CodeExecutionCreate v-if="questionPK===4" :quiz="quiz"></CodeExecutionCreate>
         </div>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
-import { API_URL } from '@/constants';
 import MultipleChoiceCreate from '@/components/MultipleChoiceCreate';
 import FreeResponseCreate from '@/components/FreeResponseCreate';
 import CodingCreate from '@/components/CodingCreate';
@@ -49,14 +47,10 @@ export default {
   watch: {
   },
   props: {
-    topicPK: {
+    quiz: {
       type: Number,
       required: true,
     },
-    assignmentPK: {
-      type: Number,
-      required: true,
-    }
   },
   computed: {
     ...mapState('auth', ['profile']),

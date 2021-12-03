@@ -23,24 +23,24 @@
                         :options="assignments"
                         selection
                         search
-                        v-model="assignmentPK"
+                        v-model="assignment"
                     />
                 </sui-form-field>
             </div>
-            <div class="buttons">>
+            <div class="buttons">
                 <button
                     class="btn btn-primary edit-btn"
                     :style="returnPrimaryButtonStyle"
                     style="float: right;"
                     data-toggle="tooltip"
                     data-placement="bottom"
-                    title="Next Step"
+                    title="Create Quiz"
                     @click="nextPage()"
                 >Create Quiz</button>
             </div>
         </div>
-        <div v-if="page >= 1">
-            <QuestionWriter :topicPK="topicPK" :assignmentPK="assignmentPK"></QuestionWriter>
+        <div v-if="quiz !== null">
+            <QuestionWriter :quiz="quiz"></QuestionWriter>
         </div>
     </div>
 </template>
@@ -65,11 +65,8 @@ export default {
       topics: [],
       topicPK: null,
       assignments: [],
-      assignmentPK: null,
-      openDate: null,
-      closeDate: null,
-      quizTypes: [],
-      quizPK: null,
+      assignment: null,
+      quiz: null,
     };
   },
   mounted() {
@@ -112,21 +109,12 @@ export default {
       }
 
       if (this.page == 1) {
-        this.openToast();
-        this.setToastInfo({
-          type: 'success',
-          title: 'Created Quiz',
-          message: 'Successfully created a quiz',
-          duration: 10000,
-        });
-        //this would then call save or create quiz or whatever
+        this.saveQuiz();  
       }
     },
     validate() {
       if(this.page == 0) {
-        return this.topicPK != null && this.assignmentPK != null;
-      } else if (this.page == 1) {
-        return this.openDate != null && this.closeDate != null && this.quizPK != null;
+        return this.topicPK != null && this.assignment != null;
       } else {
         return true;
       }
@@ -174,12 +162,55 @@ export default {
       });
     },
     saveQuiz() {
-      this.openToast();
-      this.setToastInfo({
-        type: 'error',
-        title: 'Error',
-        message: 'Not Implemented Yet',
-        duration: 10000,
+      let now = new Date(Date.now());
+      let quizData = {
+        quizzes: [{
+          pk: 'None',
+          assignment: this.assignment,
+          next_open_date: now.toISOString(),
+          next_close_date: now.toISOString(),
+        },]
+      };
+
+      axios.post(`${API_URL}/quizzes/`,
+        quizData,
+        {
+          headers: {
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }
+      ).then((response)=> {
+        console.log(response.data);
+        if(response.data.status == '200 - OK') {
+          this.openToast();
+          this.setToastInfo({
+            type: 'success',
+            title: 'Successful Creation',
+            message: 'Quiz successfully created',
+            duration: 5000,
+          });
+          axios.get(`${API_URL}/quizzes/`,{
+            headers: {
+              Authorization: `Bearer ${this.profile.id_token}`
+            },
+          }
+          ).then((response) => {
+            this.quiz = response.data.result[response.data.result.length - 1].pk;
+          });
+        }
+        else {
+          this.openToast();
+          this.setToastInfo({
+            type: 'error',
+            title: 'Creation Error',
+            message: `${response.data.errors}`,
+            duration: 10000,
+          });
+          this.page = 0;
+        }
+      }).catch(function(){
+        console.log('Quiz creation failure');
+        this.page = 0;
       });
     }
   } 
