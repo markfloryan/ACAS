@@ -278,6 +278,120 @@ class GradeThresholdViewSet(viewsets.ModelViewSet):
      
 
 '''
+______________________________________________________________________________________________      Section
+    Section: All sections. Contains functionality for viewing, creating, deleting, and editing a section
+______________________________________________________________________________________________
+'''
+
+
+# CRUD for courses.
+class SectionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = Section.objects.all()
+    serializer_class = SectionSerializer
+    model = Section
+
+    '''
+    __________________________________________________  Delete
+     url: DELETE :: <WEBSITE>/api/sections/<SECTION_ID>
+     function: Removes a given Section
+    __________________________________________________
+    '''
+
+    def delete(self, request, format=None, pk=None):
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                result.delete()
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+        return successful_delete_response()
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/sections/ OR
+          GET :: <WEBSITE>/api/sections/<SECTION_ID> OR
+     function: Retrieves all or a single Section
+    __________________________________________________
+    '''
+
+    def get(self, request, format=None, pk=None):
+        #handle case where user is requesting one specific section
+        if pk is not None:
+            try:
+                section = Section.objects.get(pk=pk)
+                print("GOT SECTION")
+                serializer = self.serializer_class(section, many=False)
+                print("SERIALIZED")
+
+            except self.model.DoesNotExist:
+                print("OBJECTNOTFOUND1")
+                return object_not_found_response()
+            except IndexError:
+                print("OBJECTNOTFOUND2")
+                return object_not_found_response()
+        else:
+            #otherwise just return all sections
+            sections = self.model.objects.all()
+            serializer = self.serializer_class(sections, many=True)
+
+        return successful_create_response(serializer.data)
+
+    '''
+    __________________________________________________  Post
+     url: POST :: <WEBSITE>/api/sections/
+     function: Creates a given Section
+    __________________________________________________
+    '''
+
+    def post(self, request, format=None, pk=None):
+        params = json.loads(request.body)
+
+        if pk is None:
+            serializer = self.serializer_class(data=params)
+            if not serializer.is_valid():
+                return invalid_serializer_response(serializer.errors)
+
+            serializer.save()
+            return successful_create_response(request.data)
+        else:
+            return colliding_id_response()
+
+    '''
+    __________________________________________________  Put
+     url: PUT :: <WEBSITE>/api/sections/<SECTION_ID>
+     function: Edits a given existing Section
+    __________________________________________________
+    '''
+
+    def put(self, request, format=None, pk=None):
+        if pk is None or request.body is None:
+            return missing_id_response()
+        try:
+            params = json.loads(request.body)
+        except:
+            return missing_id_response()
+
+        try:
+            result = self.model.objects.get(pk=pk)
+        except self.model.DoesNotExist:
+            return object_not_found_response()
+
+        serializer = self.serializer_class(result, data=params)
+
+        if not serializer.is_valid():
+            return invalid_serializer_response(serializer.errors)
+
+        serializer.save()
+        return successful_edit_response(serializer.data)
+
+
+'''
 ______________________________________________________________________________________________      Student
     Student: Student in the course
 ______________________________________________________________________________________________
@@ -1196,6 +1310,13 @@ def questionFileUpload(request,pk):
         })
     print(implementation)
     print(harness)
+    implementaion_content_raw = implementation.read().decode('utf-8')
+    harness_content_raw = harness.read().decode('utf-8')
+    print(implementaion_content_raw)
+    print(harness_content_raw)
+
+    #print(csv_content_raw) 
+
     return successful_create_response(request.data)
 
 
@@ -1749,6 +1870,186 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
 
             serializer.save()
             return successful_edit_response(serializer.data)
+
+
+'''
+______________________________________________________________________________________________      StudentToSectionViewSet
+StudentToSectionViewSet: This shows the section that a student is in
+______________________________________________________________________________________________
+'''
+
+
+class StudentToSectionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ( IsOwner & ReadOnly) )]
+    renderer_classes = (JSONRenderer, )
+    queryset = StudentToSection.objects.all()
+    serializer_class = StudentToSectionSerializer
+    model = StudentToSection
+
+    '''
+    __________________________________________________  Delete
+     url: DELETE :: <WEBSITE>/api/student/section/
+     function: Removes a given student to section relationship
+    __________________________________________________
+    '''
+
+    def delete(self, request, format=None, pk=None):
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                result.delete()
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+        return successful_delete_response()
+
+    '''
+    __________________________________________________  Get
+     url: GET :: <WEBSITE>/api/student/section/ OR
+          GET :: <WEBSITE>/api/student/section/<STUDENT_ID> OR
+          GET :: <WEBSITE>/api/student/section/?sectionId=<SECTION_ID> OR
+     function: Retrieves all or a single student course relationship
+     sectionId
+     id_token => student_id
+
+     1) get user id
+     2) get section
+     3) get studentToSection using section and student
+    __________________________________________________
+    '''
+
+    def get(self, request, format=None, pk=None):
+        is_many = True
+        if pk is None:
+
+            section_id = request.GET.get('sectionId', None)
+            if section_id is not None:
+                try:
+                    student = request.user
+                    section = Section.objects.get(pk=section_id)
+                    result = StudentToSection.objects.get(
+                        section=section, student=student)
+                    is_many = False    
+
+                except Section.DoesNotExist:
+                    return object_not_found_response()
+                except Student.DoesNotExist:
+                    return object_not_found_response()
+                except StudentToSection.DoesNotExist:
+                    return object_not_found_response()
+
+            else:
+                student = request.user
+                result = self.model.objects.filter(
+                    student=student
+                )
+                is_many = True
+
+        else:
+            try:
+                student = Student.objects.get(pk=pk)
+                result = StudentToSection.objects.filter(student=student)
+                is_many = True
+            except Student.DoesNotExist:
+                return object_not_found_response()
+        self.check_object_permissions(self.request, result)
+        serializer = self.serializer_class(result, many=is_many)
+        return successful_create_response(serializer.data)
+
+    '''
+    __________________________________________________  Post
+     url: POST :: <WEBSITE>/api/student/section/
+     function: Creates a given student setion relationship (ie enrolls them in that section)
+    __________________________________________________
+    '''
+
+    # TODO make this assign students to all assignments in that course
+    def post(self, request, format=None, pk=None):
+        if pk is None:
+            data = request.data
+            fields = ["section", "student"]
+            missing_fields = {}
+            for field in fields:
+                if field not in data:
+                    # Mocks drf serializer error
+                    missing_fields[field] = ["This field is required."]
+
+            if len(missing_fields.keys()) > 0:
+                return malformed_request_response(fields=missing_fields)
+
+            # Once we know they exist, extract them to vars
+            section_id = data["section"]
+
+            section = None
+            student = None
+
+            # Try to access the foreign key necessary for the model
+            try:
+                section = Section.objects.get(pk=course_id)
+            except Section.DoesNotExist:
+                return object_not_found_response()
+
+            student_id = data["student"]
+            try:
+                student = Student.objects.get(pk=student_id)
+            except Student.DoesNotExist:
+                return object_not_found_response()
+
+            studentToSection = StudentToSection.objects.filter(
+                section=section,
+                student=student
+            )
+
+            if len(studentToSection) > 0:
+                return colliding_id_response()
+            '''serializer = self.serializer_class(data={'course':course_id,'student':student_id})
+            if not serializer.is_valid():
+                return invalid_serializer_response(serializer.errors)
+
+            serializer.save()'''
+
+
+
+            studentToSection = StudentToSection(
+                section=section,
+                student=student
+            )
+            # Save the student to course relationship
+            studentToSection.save()
+
+            return successful_create_response(request.data)
+
+        else:
+            return colliding_id_response()
+
+    '''
+    __________________________________________________  Put
+     url: PUT :: <WEBSITE>/api/student/section/<STUDENT_ID>
+     function: Edits a given student section relationship
+    __________________________________________________
+    '''
+
+    def put(self, request, format=None, pk=None):
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                self.check_object_permissions(self.request, result)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+            serializer = self.serializer_class(result, data=request.data)
+
+            if not serializer.is_valid():  # pragma: no cover This serializer is always valid, but serializer requires is_valid to be called to save()
+                return invalid_serializer_response(serializer.errors)
+
+            serializer.save()
+            return successful_edit_response(serializer.data)
+
 
 '''
 studentProgress

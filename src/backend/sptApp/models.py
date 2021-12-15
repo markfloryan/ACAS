@@ -156,16 +156,35 @@ class Course(models.Model):
         return self.subject_code + " " + self.course_code + " " + self.name
 
 
+"""
+______________________________________________________________________________________________
+ SECTION
+ Section(course_id section_name, section_code)
+
+ Sections are subsets of courses to allow for different groups of students within the same 
+ course.
+______________________________________________________________________________________________
+"""
+
+
+class Section(models.Model):
+    course = models.ForeignKey(
+        Course, related_name='course', on_delete=models.CASCADE, blank=True, default="0")
+    
+    name = models.CharField(max_length=250)
+
+    section_code = models.CharField(max_length=250)
+
+    def __str__(self):
+        return "Section " + self.section_code + " - " + self.name + " is part of course " + self.course.__str__()
 
 """
 ______________________________________________________________________________________________
  STUDENT TO COURSE
- StudentToCourse(user_id, course_id, semester, year, grade) //For student users
+ StudentToCourse(user_id, course_id, semester, grade) //For student users
 ______________________________________________________________________________________________
 """
 
-
-# TODO: Consider Section model
 
 class StudentToCourse(models.Model):
     student = models.ForeignKey(
@@ -199,6 +218,25 @@ class StudentToCourse(models.Model):
 
     def __str__(self):
         return self.student.__str__() + " is taking " + self.course.__str__()
+
+
+"""
+______________________________________________________________________________________________
+ STUDENT TO SECTION
+ StudentToSection(user_id, section_id, semester) //For student users
+______________________________________________________________________________________________
+"""
+
+
+class StudentToSection(models.Model):
+    student = models.ForeignKey(
+        Student, related_name='student_section', on_delete=models.CASCADE)
+    section = models.ForeignKey(
+        Section, related_name='sections', on_delete=models.CASCADE)
+    semester = models.CharField(max_length=250, null=True, blank=True)
+
+    def __str__(self):
+        return self.student.__str__() + " is in " + self.section.__str__()
 
 
 """

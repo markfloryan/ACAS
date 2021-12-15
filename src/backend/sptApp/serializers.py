@@ -120,10 +120,21 @@ class StudentToAssignmentSerializer(SecureModelSerializer):
             'assignment'
         )
 
+class SectionSerializer(SecureModelSerializer):
+    class Meta:
+        model = Section
+        fields = (
+            'pk',
+            'name',
+            'section_code',
+            'course',
+        )
+
 class CourseSerializer(SecureModelSerializer):
     topics = TopicSerializer(many=True, read_only=True)
     #nodes = StudentToTopicSerializer(many=True, read_only=True)
     edges = TopicToTopicSerializer(many=True, read_only=True)
+    sections = SectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
@@ -132,6 +143,7 @@ class CourseSerializer(SecureModelSerializer):
             'name',
             'course_code',
             'subject_code',
+            'sections',
             'topics',
             'edges',
             'professor',
@@ -282,6 +294,16 @@ class StudentToCourseSlimSerializer(SecureModelSerializer):
             'student',
             'course',
             'grade',
+        )
+        depth = 1
+
+class StudentToSectionSerializer(SecureModelSerializer):
+    class Meta:
+        model = StudentToSection
+        fields = (
+            'pk',
+            'student',
+            'section',
         )
         depth = 1
 
