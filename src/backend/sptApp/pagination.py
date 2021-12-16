@@ -1,6 +1,4 @@
-page_size = 25  # Constant for number of elements to load per page
-
-def get_page_indices(page = 0):
+def get_page_indices(page = 0, page_size = 25):
     # Determine the start and end of the page
     page_start = 0
     if page != None:

@@ -33,6 +33,13 @@
       >Roster</button>
       <button
         v-if="isProfessor"
+        :class="context === 'courseSection' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'courseSection' ? true : false"
+        :style="returnPrimaryButtonStyle"
+        @click="changeContext('courseSection')"
+      >Sections</button>
+      <button
+        v-if="isProfessor"
         :class="context === 'csvUpload' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
         :disabled="context === 'csvUpload' ? true : false"
         :style="returnPrimaryButtonStyle"
@@ -73,6 +80,11 @@
     <div class="content">
       <CourseRoster
         v-if="context === 'courseRoster'"
+        :courseId="id"
+        @contextChange="changeContext"
+      />
+      <CourseSection
+        v-if="context === 'courseSection'"
         :courseId="id"
         @contextChange="changeContext"
       />
@@ -120,6 +132,7 @@ import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
 import CSVUpload from '@/components/CSVUpload';
 import CourseRoster from '@/components/CourseRoster';
+import CourseSection from '@/components/CourseSection';
 import CreateQuiz from '@/components/CreateQuiz';
 import ClassGraph from '@/components/ClassGraph';
 import LoadingLayer from '@/components/LoadingLayer';
@@ -134,6 +147,7 @@ export default {
     CSVUpload,
     CreateQuiz,
     CourseRoster,
+    CourseSection,
     ClassGraph,
     LoadingLayer,
     Sidebar,

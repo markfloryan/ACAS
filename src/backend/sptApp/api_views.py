@@ -316,6 +316,7 @@ class SectionViewSet(viewsets.ModelViewSet):
     __________________________________________________  get
      url: GET :: <WEBSITE>/api/sections/ OR
           GET :: <WEBSITE>/api/sections/<SECTION_ID> OR
+          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>&page=<PAGE_NUM>
      function: Retrieves all or a single Section
     __________________________________________________
     '''
@@ -325,20 +326,24 @@ class SectionViewSet(viewsets.ModelViewSet):
         if pk is not None:
             try:
                 section = Section.objects.get(pk=pk)
-                print("GOT SECTION")
                 serializer = self.serializer_class(section, many=False)
-                print("SERIALIZED")
 
             except self.model.DoesNotExist:
-                print("OBJECTNOTFOUND1")
                 return object_not_found_response()
             except IndexError:
-                print("OBJECTNOTFOUND2")
                 return object_not_found_response()
         else:
-            #otherwise just return all sections
-            sections = self.model.objects.all()
-            serializer = self.serializer_class(sections, many=True)
+            page = request.GET.get('page', None)
+            course_id = request.GET.get('courseId', None)
+            
+            if page is not None and course_id is not None:
+                page_start, page_end = get_page_indices(page=page, page_size=5)
+                sections = Section.objects.filter(course=course_id)[page_start:page_end]
+                serializer = self.serializer_class(sections, many=True)
+            else:
+                #otherwise just return all sections
+                sections = self.model.objects.all()
+                serializer = self.serializer_class(sections, many=True)
 
         return successful_create_response(serializer.data)
 
@@ -569,7 +574,7 @@ class SearchViewSet(viewsets.ModelViewSet):
             students = Student.objects.all()  # This will be filtered further below
 
         # Get page start and end
-        page_start, page_end = get_page_indices(request.GET.get('page', None))
+        page_start, page_end = get_page_indices(page=request.GET.get('page', None))
 
         # If we do not pass a courseId, then filter students among all courses
         if courseId == None:
