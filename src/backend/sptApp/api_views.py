@@ -2029,8 +2029,6 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
             if len(studentToSection) > 0:
                 return colliding_id_response()
 
-
-
             studentToSection = StudentToSection(
                 section=section,
                 student=student
