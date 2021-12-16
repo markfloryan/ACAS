@@ -315,8 +315,9 @@ class SectionViewSet(viewsets.ModelViewSet):
     '''
     __________________________________________________  get
      url: GET :: <WEBSITE>/api/sections/ OR
-          GET :: <WEBSITE>/api/sections/<SECTION_ID> OR
-          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>&page=<PAGE_NUM>
+          GET :: <WEBSITE>/api/sections/<SECTION_ID> OROR
+          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>
+          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>&page=<PAGE_NUM> 
      function: Retrieves all or a single Section
     __________________________________________________
     '''
@@ -336,10 +337,14 @@ class SectionViewSet(viewsets.ModelViewSet):
             page = request.GET.get('page', None)
             course_id = request.GET.get('courseId', None)
             
-            if page is not None and course_id is not None:
-                page_start, page_end = get_page_indices(page=page, page_size=5)
-                sections = Section.objects.filter(course=course_id)[page_start:page_end]
-                serializer = self.serializer_class(sections, many=True)
+            if course_id is not None:
+                if page is not None:
+                    page_start, page_end = get_page_indices(page=page, page_size=5)
+                    sections = Section.objects.filter(course=course_id)[page_start:page_end]
+                    serializer = self.serializer_class(sections, many=True)
+                else:
+                    sections = Section.objects.filter(course=course_id)
+                    serializer = self.serializer_class(sections, many=True)
             else:
                 #otherwise just return all sections
                 sections = self.model.objects.all()
@@ -1894,14 +1899,25 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
 
     '''
     __________________________________________________  Delete
-     url: DELETE :: <WEBSITE>/api/student/section/
+     url: DELETE :: <WEBSITE>/api/student/section/ OR
+          DELETE :: <WEBSITE>/api/student/section/?sectionId=<SECTION_ID>&studentId=<STUDENT_ID>
      function: Removes a given student to section relationship
     __________________________________________________
     '''
 
     def delete(self, request, format=None, pk=None):
         if pk is None:
-            return missing_id_response()
+            section = request.GET.get('sectionId', None)
+            student = request.GET.get('studentId', None)
+            
+            if section is not None and student is not None:
+                try:
+                    result = self.model.objects.filter(section=section, student=student)
+                    result.delete()
+                except self.model.DoesNotExist:
+                    return object_not_found_response()
+            else:
+                return missing_id_response()
         else:
             try:
                 result = self.model.objects.get(pk=pk)
@@ -1916,7 +1932,8 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
      url: GET :: <WEBSITE>/api/student/section/ OR
           GET :: <WEBSITE>/api/student/section/<STUDENT_ID> OR
           GET :: <WEBSITE>/api/student/section/?sectionId=<SECTION_ID> OR
-     function: Retrieves all or a single student course relationship
+          GET :: <WEBSITE>/api/student/section/?studentId=<STUDENT_ID>&courseId=<COURSE_ID> OR
+     function: Retrieves all or a single student section relationship
      sectionId
      id_token => student_id
 
@@ -1947,11 +1964,20 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
                     return object_not_found_response()
 
             else:
-                student = request.user
-                result = self.model.objects.filter(
-                    student=student
-                )
-                is_many = True
+                student = request.GET.get('studentId', None)
+                course = request.GET.get('courseId', None)
+                if student is not None and course is not None:
+                    sections = Section.objects.filter(course_id=course)
+                    result = self.model.objects.filter(
+                        student=student, section__in=sections
+                    )
+                else:
+
+                    student = request.user
+                    result = self.model.objects.filter(
+                        student=student
+                    )
+                    is_many = True
 
         else:
             try:
@@ -1971,38 +1997,30 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
     __________________________________________________
     '''
 
-    # TODO make this assign students to all assignments in that course
     def post(self, request, format=None, pk=None):
         if pk is None:
             data = request.data
-            fields = ["section", "student"]
-            missing_fields = {}
-            for field in fields:
-                if field not in data:
-                    # Mocks drf serializer error
-                    missing_fields[field] = ["This field is required."]
+            section = data["section"]
+            student = data["student"]
 
-            if len(missing_fields.keys()) > 0:
-                return malformed_request_response(fields=missing_fields)
+            if section is None:
+                malformed_request_response(fields={"section": "This field is required"})
 
-            # Once we know they exist, extract them to vars
-            section_id = data["section"]
-
-            section = None
-            student = None
+            if student is None:
+                malformed_request_response(fields={"student": "This field is required"})
 
             # Try to access the foreign key necessary for the model
             try:
-                section = Section.objects.get(pk=course_id)
+                section = Section.objects.get(pk=section)
             except Section.DoesNotExist:
                 return object_not_found_response()
 
             student_id = data["student"]
             try:
-                student = Student.objects.get(pk=student_id)
+                student = Student.objects.get(pk=student)
             except Student.DoesNotExist:
                 return object_not_found_response()
-
+        
             studentToSection = StudentToSection.objects.filter(
                 section=section,
                 student=student
@@ -2010,11 +2028,6 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
 
             if len(studentToSection) > 0:
                 return colliding_id_response()
-            '''serializer = self.serializer_class(data={'course':course_id,'student':student_id})
-            if not serializer.is_valid():
-                return invalid_serializer_response(serializer.errors)
-
-            serializer.save()'''
 
 
 
@@ -2022,7 +2035,7 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
                 section=section,
                 student=student
             )
-            # Save the student to course relationship
+            # Save the student to section relationship
             studentToSection.save()
 
             return successful_create_response(request.data)

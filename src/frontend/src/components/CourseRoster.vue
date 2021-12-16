@@ -12,10 +12,11 @@
         <sui-table v-if="newStudents.length > 0" celled>
           <sui-table-header>
             <sui-table-row>
-              <sui-table-header-cell :width="12">Name</sui-table-header-cell>
-              <sui-table-header-cell :width="3">Email</sui-table-header-cell>
+              <sui-table-header-cell :width="2">Name</sui-table-header-cell>
+              <sui-table-header-cell :width="2">Email</sui-table-header-cell>
+              <sui-table-header-cell :width="3">Sections</sui-table-header-cell>
               <sui-table-header-cell :width="1">Course Grade</sui-table-header-cell>
-              <sui-table-header-cell :width="2">Actions</sui-table-header-cell>
+              <sui-table-header-cell :width="4">Actions</sui-table-header-cell>
             </sui-table-row>
           </sui-table-header>
           <sui-table-body>
@@ -24,9 +25,15 @@
             >
               <sui-table-cell>{{ student.name }}</sui-table-cell>
               <sui-table-cell>{{ student.email }}</sui-table-cell>
+              <sui-table-cell>
+                <ul class="section">
+                  <li v-for="section in student.sections" v-bind:key="section.pk">{{section.name}} - {{section.section_code}}</li>
+                </ul>
+              </sui-table-cell>
               <sui-table-cell>{{ student.course_grade }}</sui-table-cell>
               <sui-table-cell>
-                <button @click="removeStudent(student.value)" class="btn btn-plain" type="button">Remove</button>
+                <button @click="updateSections(student)" class="btn btn-primary" type="button">Sections</button>
+                <button @click="removeStudent(student.value)" class="btn btn-delete" type="button">Remove</button>
               </sui-table-cell>
             </sui-table-row>
           </sui-table-body>
@@ -60,7 +67,7 @@
               <sui-table-cell>{{ student.name }}</sui-table-cell>
               <sui-table-cell>{{ student.email }}</sui-table-cell>
               <sui-table-cell>
-                <button @click="addStudent(student.value)" class="btn btn-plain" type="button">Add</button>
+                <button @click="addStudent(student.value)" class="btn btn-create" type="button">Add</button>
               </sui-table-cell>
             </sui-table-row>
           </sui-table-body>
@@ -77,7 +84,10 @@
         <button v-on:click="incrementNotEnrolledPage" class="btn" style="padding: 2pt; font-size: 11pt;" >Next</button>
       </div>
 
-
+    <AddStudentsToSection v-if="addingStudentToSection" 
+      @onClose="closePopUp()" 
+      :prefill="currentStudent"
+      :course="courseId"/>
     <LoadingLayer v-if="isLoading" :message="'Sending...'"/>
   </div>
 </template>
@@ -90,6 +100,7 @@ import { API_URL } from '@/constants';
 import CourseRosterUpload from '@/components/CourseRosterUpload';
 import AssignmentUpload from '@/components/AssignmentUpload';
 import ActualAssignmentUpload from '@/components/ActualAssignmentUpload';
+import AddStudentsToSection from '@/components/AddStudentToSections';
 export default {
   name: 'AddStudentsToCourse',
   components: {
@@ -97,6 +108,7 @@ export default {
     CourseRosterUpload,
     AssignmentUpload,
     ActualAssignmentUpload,
+    AddStudentsToSection
   },
   props: {
     courseId: {
@@ -110,10 +122,12 @@ export default {
   data() {
     return {
       isLoading: false,
+      addingStudentToSection: false,
       newStudents: [],
       enrollableStudents: [],
       studentRoster: [],
       studentsInClass: {},
+      currentStudent: null,
       enrolledPage: 1,
       enrolledPageField: 1,
       notEnrolledPage: 1,
@@ -170,9 +184,22 @@ export default {
                 value: student.id,
                 name: student.first_name + ' ' + student.last_name,
                 email: student.email,
-                course_grade: student.course_grade
+                sections: [],
+                course_grade: student.course_grade,
               };
             });
+
+            this.newStudents.forEach(student => {
+              axios
+                .get(`${API_URL}/student/section/?studentId=${student.value}&courseId=${this.courseId}`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } })
+                .then(response => {
+                  student.sections = response.data.result.map(item => {return item.section;});
+                })
+                .catch(error => {
+                  console.log(error);
+                });
+            });
+
             this.quizName = data.name;
             resolve(response);
           })
@@ -267,6 +294,14 @@ export default {
           this.isLoading = false;
         });
     },
+    closePopUp(){
+      this.retrieveEnrolledStudents(this.enrolledPage);
+      this.addingStudentToSection = false;
+    },
+    updateSections(student){
+      this.currentStudent = student;
+      this.addingStudentToSection = true;
+    },
     // Does two things:
     // one: it makes the network request to remove the given student from the class
     // two: once the student has been deleted from the class, it reretireves the student data to rerender the component
@@ -314,5 +349,8 @@ export default {
 .not-enrolled-students {
   height: auto;
   overflow-y: scroll;
+}
+.section {
+  display: inline-block;
 }
 </style>

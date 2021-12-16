@@ -18,7 +18,6 @@
           <button v-if="!create" type="button" @click="updateSection()" class="btn btn-create create-btn">Update</button>
         </div>
       </sui-form>
-      <p v-show="aexist === true">*Already Exists</p>
     </div>
   </div>
 </template>
@@ -51,12 +50,9 @@ export default {
     return {
       sname: '',
       scode: '',
-      sid: '',
-      aexist:false,
     };
   },
   mounted() {
-    console.log(this.prefill);
     if(this.prefill != null) {
       this.sname = this.prefill.name;
       this.scode = this.prefill.section_code;
