@@ -15,10 +15,10 @@
           </sui-form-field>
         </div>
         <div class="content">
-          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1" :quiz="quiz"></MultipleChoiceCreate>
-          <FreeResponseCreate v-if="questionPK===2" :quiz="quiz"></FreeResponseCreate>
-          <CodingCreate v-if="questionPK===3" :quiz="quiz"></CodingCreate>
-          <CodeExecutionCreate v-if="questionPK===4" :quiz="quiz"></CodeExecutionCreate>
+          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1" :quiz="quiz" @onClose="refreshWriter()"></MultipleChoiceCreate>
+          <FreeResponseCreate v-if="questionPK===2" :quiz="quiz" @onClose="refreshWriter()"></FreeResponseCreate>
+          <CodingCreate v-if="questionPK===3" :quiz="quiz" @onClose="refreshWriter()"></CodingCreate>
+          <CodeExecutionCreate v-if="questionPK===4" :quiz="quiz" @onClose="refreshWriter()"></CodeExecutionCreate>
         </div>
     </div>
 </template>
@@ -58,6 +58,9 @@ export default {
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
+    refreshWriter() {
+      this.questionPK = null;
+    },
   } 
 };
 </script>

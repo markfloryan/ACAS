@@ -241,6 +241,7 @@ export default {
                     message: 'Question successfully added',
                     duration: 5000,
                   });
+                  this.$emit('onClose');
                 }
               });
             });
