@@ -2029,6 +2029,8 @@ class StudentToSectionViewSet(viewsets.ModelViewSet):
             if len(studentToSection) > 0:
                 return colliding_id_response()
 
+
+
             studentToSection = StudentToSection(
                 section=section,
                 student=student
@@ -2173,7 +2175,7 @@ class CourseRosterUpload(viewsets.ModelViewSet):
             #make the student object
             student = Student(email=email, first_name=first, last_name=last, username=username, id_token="", is_professor='f')
             students.append(student)
-        
+
         Student.objects.bulk_create(students, ignore_conflicts=True)
 
         #Students are created, let's make the student course pairs

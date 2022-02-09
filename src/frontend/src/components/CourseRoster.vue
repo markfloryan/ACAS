@@ -33,7 +33,7 @@
               <sui-table-cell>{{ student.course_grade }}</sui-table-cell>
               <sui-table-cell>
                 <button @click="updateSections(student)" class="btn btn-primary" type="button">Sections</button>
-                <button @click="removeStudent(student)" class="btn btn-delete" type="button">Remove</button>
+                <button @click="removeStudent(student.value)" class="btn btn-delete" type="button">Remove</button>
               </sui-table-cell>
             </sui-table-row>
           </sui-table-body>
@@ -302,28 +302,15 @@ export default {
       this.currentStudent = student;
       this.addingStudentToSection = true;
     },
-    // Does three things:
+    // Does two things:
     // one: it makes the network request to remove the given student from the class
-    // two: removes student from sections associated from the class they are being removed from
-    // three: once the student has been deleted from the class, it reretireves the student data to rerender the component
+    // two: once the student has been deleted from the class, it reretireves the student data to rerender the component
     removeStudent(student) {
       axios
         .delete(
-          `${API_URL}/student/course/${student.value}?courseId=${parseInt(this.courseId)}`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } }
+          `${API_URL}/student/course/${student}?courseId=${parseInt(this.courseId)}`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } }
         )
-        .then(response => {
-          if(response.status == 200) {
-            student.sections.forEach(section => {
-              axios
-                .delete(`${API_URL}/student/section/?sectionId=${section.id}&studentId=${student.value}`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } })
-                .then(response => {
-                })
-                .catch(error => {
-                  console.log(error);
-                });
-            });
-          }
-        })
+        .then(response => {})
         .catch(error => {})
         .finally(() => {
           this.retrieveEnrolledStudents(this.enrolledPage).then(this.retrieveNotEnrolledStudents(this.notEnrolledPage));
