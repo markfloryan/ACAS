@@ -1,10 +1,10 @@
 <template>
     <div>
-        <div class="quizCreator" v-if="page < 1">
+        <div class="quizCreator" v-if="quiz == null">
             <div class="title" style="padding:10px">
-                <h3 v-if="page == 0">Create quizzes</h3>
+                <h3>Create quizzes</h3>
             </div> 
-            <div class="content" v-if="page === 0">
+            <div class="content">
                 <h4>Select a Topic</h4>
                 <sui-form-field>
                     <sui-dropdown
@@ -35,7 +35,7 @@
                     data-toggle="tooltip"
                     data-placement="bottom"
                     title="Create Quiz"
-                    @click="nextPage()"
+                    @click="saveQuiz()"
                 >Create Quiz</button>
             </div>
         </div>
@@ -59,7 +59,6 @@ export default {
   data(){
     return {
       file: '',
-      page: 0,
       disableBack: true,
       disableNext: false,
       topics: [],
@@ -90,35 +89,8 @@ export default {
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
-    nextPage() {
-      if (!this.validate()) {
-        this.openToast();
-        this.setToastInfo({
-          type: 'error',
-          title: 'Error',
-          message: 'Page not complete',
-          duration: 10000,
-        });
-        return;
-      }
-      this.page += 1;
-      if(this.page == 0) {
-        this.disableBack = true;
-      } else {
-        this.disableBack = false;
-      }
-
-      if (this.page == 1) {
-        this.saveQuiz();  
-      }
-    },
     validate() {
-      if(this.page == 0) {
-        return this.topicPK != null && this.assignment != null;
-      } else {
-        return true;
-      }
-
+      return this.topicPK != null && this.assignment != null;
     },
     getAssignments() {
       axios.get(`${API_URL}/assignments/?topicId=${this.topicPK}`, 
@@ -162,58 +134,92 @@ export default {
       });
     },
     saveQuiz() {
-      let now = new Date(Date.now());
-      let quizData = {
-        quizzes: [{
-          pk: 'None',
-          assignment: this.assignment,
-          next_open_date: now.toISOString(),
-          next_close_date: now.toISOString(),
-        },]
-      };
+      if(this.validate()) {
+        let now = new Date(Date.now());
+        let quizData = {
+          quizzes: [{
+            pk: 'None',
+            assignment: this.assignment,
+            next_open_date: now.toISOString(),
+            next_close_date: now.toISOString(),
+          },]
+        };
 
-      axios.post(`${API_URL}/quizzes/`,
-        quizData,
-        {
-          headers: {
-            Authorization: `Bearer ${this.profile.id_token}`
-          }
-        }
-      ).then((response)=> {
-        console.log(response.data);
-        if(response.data.status == '200 - OK') {
-          this.openToast();
-          this.setToastInfo({
-            type: 'success',
-            title: 'Successful Creation',
-            message: 'Quiz successfully created',
-            duration: 5000,
-          });
-          axios.get(`${API_URL}/quizzes/`,{
+        axios.post(`${API_URL}/quizzes/`,
+          quizData,
+          {
             headers: {
               Authorization: `Bearer ${this.profile.id_token}`
-            },
+            }
           }
-          ).then((response) => {
-            this.quiz = response.data.result[response.data.result.length - 1].pk;
-          });
-        }
-        else {
-          this.openToast();
-          this.setToastInfo({
-            type: 'error',
-            title: 'Creation Error',
-            message: `${response.data.errors}`,
-            duration: 10000,
-          });
-          this.page = 0;
-        }
-      }).catch(function(){
-        console.log('Quiz creation failure');
-        this.page = 0;
-      });
+        ).then((response)=> {
+          if(response.data.status == '200 - OK') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Creation',
+              message: 'Quiz successfully created',
+              duration: 5000,
+            });
+            axios.get(`${API_URL}/quizzes/`,{
+              headers: {
+                Authorization: `Bearer ${this.profile.id_token}`
+              },
+            }
+            ).then((response) => {
+              this.quiz = response.data.result[response.data.result.length - 1].pk;
+            });
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Creation Error testing',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        }).catch((error) => {
+          if(error.response.data.status == '400 - Bad Request') {
+            console.log(error.response.data)
+            if(error.response.data.missing_data.assignment){
+              this.openToast();
+              this.setToastInfo({
+                type: 'error',
+                title: 'Assignment',
+                message: `${error.response.data.missing_data.assignment[0]} This quiz already exists`,
+                duration: 10000,
+              });
+            } else {
+              this.openToast();
+              this.setToastInfo({
+                type: 'error',
+                title: '400 - Bad Request',
+                message: `${error}`,
+                duration: 10000,
+              });
+            }
+          } else if (error.response.data.status == '500 - Internal Server Error') {
+            this.openToast();
+              this.setToastInfo({
+                type: 'error',
+                title: '500 - Internal Server Error',
+                message: `${error}`,
+                duration: 10000,
+              });
+          }
+        });
+      } else {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Missing Data',
+          message: 'One or more fields are empty',
+          duration: 10000,
+        });
+      }
     }
-  } 
+  }
 };
 </script>
 

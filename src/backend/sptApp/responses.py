@@ -57,7 +57,7 @@ def object_is_foreign_key_response():
 def invalid_serializer_response(errors={}):
     return Response({
         'status': '400 - Bad Request',
-        'missing data': errors
+        'missing_data': errors
     }, status=status.HTTP_400_BAD_REQUEST)
 
 # This means that the request can't be invoked on an existing object,
