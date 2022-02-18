@@ -2,7 +2,7 @@
     <div>
         <div class="quizCreator" v-if="quiz == null">
             <div class="title" style="padding:10px">
-                <h3>Create quizzes</h3>
+                <h3>Create a quiz!</h3>
             </div> 
             <div class="content">
                 <h4>Select a Topic</h4>
@@ -58,9 +58,6 @@ export default {
   */
   data(){
     return {
-      file: '',
-      disableBack: true,
-      disableNext: false,
       topics: [],
       topicPK: null,
       assignments: [],
@@ -70,7 +67,9 @@ export default {
   },
   mounted() {
     this.getTopics();
-    this.quizTypes = [{text: 'Practice', value: 0}, {text: 'Graded', value: 1}];
+    if(this.topicId) {
+      this.topicPK = this.topicId;
+    }
   },
   watch: {
     topicPK: function (){
@@ -81,6 +80,10 @@ export default {
     courseId: {
       type: String,
       required: true,
+    },
+    topicId: {
+      type: Number,
+      required: false,
     }
   },
   computed: {
@@ -181,7 +184,6 @@ export default {
           }
         }).catch((error) => {
           if(error.response.data.status == '400 - Bad Request') {
-            console.log(error.response.data)
             if(error.response.data.missing_data.assignment){
               this.openToast();
               this.setToastInfo({
@@ -201,12 +203,12 @@ export default {
             }
           } else if (error.response.data.status == '500 - Internal Server Error') {
             this.openToast();
-              this.setToastInfo({
-                type: 'error',
-                title: '500 - Internal Server Error',
-                message: `${error}`,
-                duration: 10000,
-              });
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
           }
         });
       } else {

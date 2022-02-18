@@ -108,6 +108,7 @@
     </div>
     <div class="submit">
       <button
+          :v-if="question == null"
           class="btn btn-primary edit-btn"
           :style="returnPrimaryButtonStyle"
           style="float: right;"
@@ -116,6 +117,16 @@
           title="Add"
           @click="writeQuestion()"
       >Add Question</button>
+      <button
+          :v-if="question != null"
+          class="btn btn-primary edit-btn"
+          :style="returnPrimaryButtonStyle"
+          style="float: right;"
+          data-toggle="tooltip"
+          data-placement="bottom"
+          title="Add"
+          @click="updateQuestion()"
+      >Update Question</button>
     </div>
   </div>
 </template>
@@ -144,6 +155,9 @@ export default {
     this.variableTypes = [{text: 'Integer Range', value: 0}, {text: 'Decimal Range', value: 1}, {text: 'Discrete Set', value: 2}]; 
     this.updateAnswers();
     this.updateVariables();
+    if(question) {
+      //preload question fields here
+    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -158,6 +172,10 @@ export default {
       type: Number,
       required: true,
     },
+    question: {
+      type: Object,
+      require: false,
+    }
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
@@ -388,7 +406,6 @@ export default {
             })
           }]
         };
-        console.log(questionData);
         axios.post(`${API_URL}/quiz-questions/`,
           questionData,
           {
@@ -416,8 +433,106 @@ export default {
               duration: 10000,
             });
           }
-        }).catch(function(){
-          console.log('Question writing failure');
+        }).catch((error) => {
+          if(error.response.data.status == '400 - Bad Request') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Missing Data',
+              message: `${error.response.data.missing_data}`,
+              duration: 10000,
+            });
+          } else if (error.response.data.status == '500 - Internal Server Error') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          } else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Quiz Question Creation Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          }
+        });
+      }
+    },
+    updateQuestion() {
+      if(this.validate()){
+        let questionData = {
+          'quiz-questions': [{
+            pk: 'None',
+            quiz: this.quiz,
+            question_type: this.select ? 1 : 0,
+            answered_correct: 0,
+            answered_total: 0,
+            question_parameters: JSON.stringify({
+              question: this.questionText,
+              variables: this.variableTexts,
+              choices: this.answerTexts,
+              answer: this.select ? this.correctAnswers.split(' ') : this.correctAnswers.substring(0,1)
+            })
+          }]
+        };
+        //CHANGE THIS TO BE A PUT CALL
+        axios.post(`${API_URL}/quiz-questions/`,
+          questionData,
+          {
+            headers: {
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.status == '200 - OK') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Creation',
+              message: 'Question successfully added',
+              duration: 5000,
+            });
+            this.$emit('onClose');
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Creation Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        }).catch((error) => {
+          if(error.response.data.status == '400 - Bad Request') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Missing Data',
+              message: `${error.response.data.missing_data}`,
+              duration: 10000,
+            });
+          } else if (error.response.data.status == '500 - Internal Server Error') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          } else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Quiz Question Creation Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          }
         });
       }
     }

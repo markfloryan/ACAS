@@ -15,10 +15,27 @@
           </sui-form-field>
         </div>
         <div class="content">
-          <MultipleChoiceCreate v-if="questionPK===0 || questionPK===1" :select="questionPK===1" :quiz="quiz" @onClose="refreshWriter()"></MultipleChoiceCreate>
-          <FreeResponseCreate v-if="questionPK===2" :quiz="quiz" @onClose="refreshWriter()"></FreeResponseCreate>
-          <CodingCreate v-if="questionPK===3" :quiz="quiz" @onClose="refreshWriter()"></CodingCreate>
-          <CodeExecutionCreate v-if="questionPK===4" :quiz="quiz" @onClose="refreshWriter()"></CodeExecutionCreate>
+          <MultipleChoiceCreate 
+            v-if="questionPK===0 || questionPK===1" 
+            :select="questionPK===1" 
+            :quiz="quiz" 
+            :question="question"
+            @onClose="refreshWriter()" />
+          <FreeResponseCreate 
+            v-if="questionPK===2" 
+            :quiz="quiz" 
+            :question="question"
+            @onClose="refreshWriter()" />
+          <CodingCreate 
+            v-if="questionPK===3" 
+            :quiz="quiz" 
+            :question="question"
+            @onClose="refreshWriter()" />
+          <CodeExecutionCreate 
+            v-if="questionPK===4" 
+            :quiz="quiz" 
+            :question="question"
+            @onClose="refreshWriter()" />
         </div>
     </div>
 </template>
@@ -43,6 +60,9 @@ export default {
   },
   mounted() {
     this.questionTypes = [{text: 'Multiple Choice', value: 0}, {text: 'Multiple Select', value: 1}, {text: 'Free Response', value: 2}, {text: 'Implementation', value: 3}, {text: 'Execution', value: 4}];
+    if(this.question) {
+      this.questionPK = this.question.question_type;
+    }
   },
   watch: {
   },
@@ -50,6 +70,10 @@ export default {
     quiz: {
       type: Number,
       required: true,
+    },
+    question: {
+      type: Object,
+      required: false,
     },
   },
   computed: {
