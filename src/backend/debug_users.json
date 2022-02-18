@@ -19,6 +19,23 @@
     },
     {
         "model": "sptApp.student",
+        "pk": 98,
+        "fields": {
+            "first_name": "George",
+            "last_name": "Taliaferro",
+            "username": "georgewt",
+            "password": "pw",
+            "is_superuser": "f",
+            "is_staff": "t",
+            "is_active": "t",
+            "id_token": 123456,
+            "is_professor": "t",
+            "email": "w.george.taliaferro@gmail.com",
+            "join_date": "2021-9-10T20:15:18.137Z"
+        }
+    },
+    {
+        "model": "sptApp.student",
         "pk": 99,
         "fields": {
             "first_name": "Jonny",

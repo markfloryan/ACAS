@@ -37,6 +37,7 @@ gitpull = api_views.gitPull
 course_list = api_views.CourseViewSet.as_view(request_override_map)
 competency_threshold_list = api_views.CompetencyThresholdViewSet.as_view(request_override_map)
 grade_threshold_list = api_views.GradeThresholdViewSet.as_view(request_override_map)
+section_list = api_views.SectionViewSet.as_view(request_override_map)
 student_list = api_views.StudentViewSet.as_view(request_override_map)
 topic_list = api_views.TopicViewSet.as_view(request_override_map)
 student_to_topic_list = api_views.StudentToTopicViewSet.as_view(request_override_map)
@@ -44,6 +45,7 @@ topic_to_topic_list = api_views.TopicToTopicViewSet.as_view(request_override_map
 resources_list = api_views.ResourcesViewSet.as_view(request_override_map)
 settings_list = api_views.SettingsViewModel.as_view(request_override_map)
 student_to_course_list = api_views.StudentToCourseViewSet.as_view(request_override_map)
+student_to_section_list = api_views.StudentToSectionViewSet.as_view(request_override_map)
 student_progress_list = api_views.studentProgress
 student_to_topic_list = api_views.StudentToTopicViewSet.as_view(request_override_map)
 topic_to_topic_list = api_views.TopicToTopicViewSet.as_view(request_override_map)
@@ -51,11 +53,12 @@ assignment_list = api_views.AssignmentViewSet.as_view(request_override_map)
 quiz_list = api_views.QuizViewSet.as_view(request_override_map)
 quiz_question_list = api_views.QuizQuestionViewSet.as_view(request_override_map)
 quiz_interface = api_views.QuizInterfaceViewSet.as_view(request_override_map)
+question_file_upload = api_views.questionFileUpload
 course_roster_upload = api_views.CourseRosterUpload.as_view(request_override_map)
 course_grades_upload = api_views.courseGradesUpload
 course_gradescope_upload = api_views.courseGradescopeUpload
 course_assignment_upload = api_views.assignmentUpload
-assignment_quiz_upload = api_views.assignmentQuizUpload
+# assignment_quiz_upload = api_views.assignmentQuizUpload - commented out as we are no longer doing csv uploads for quizzes
 students_in_topic = api_views.CourseTopicToStudentViewSet.as_view(request_override_map)
 search_list = api_views.SearchViewSet.as_view(request_override_map)
 student_to_assignment_list = api_views.StudentToAssignmentViewSet.as_view(request_override_map_delete)
@@ -81,6 +84,10 @@ urlpatterns = [
     url(r'^api/courses/(?P<pk>[0-9]+)', course_list, name='course-detail'),
     url(r'^api/courses/', course_list, name='course-list'),
 
+    # Sections
+    url(r'^api/sections/(?P<pk>[0-9]+)', section_list, name='section-detail'),
+    url(r'^api/sections/', section_list, name='section-list'),
+
     #search and students
     url(r'^api/search/', search_list, name='search-detail'),
     url(r'^api/students/(?P<pk>[0-9]+)', student_list, name='student-detail'),
@@ -91,7 +98,7 @@ urlpatterns = [
     url(r'^api/courseGradescopeUpload/(?P<pk>[0-9]+)', course_gradescope_upload, name='course-gradescope-upload'),
     
     url(r'^api/courseAssignmentUpload/(?P<pk>[0-9]+)', course_assignment_upload, name='course-assignment-upload'),
-    url(r'^api/assignmentQuizUpload/(?P<pk>[0-9]+)', assignment_quiz_upload, name='assignment-quiz-upload'),
+    #url(r'^api/assignmentQuizUpload/(?P<pk>[0-9]+)', assignment_quiz_upload, name='assignment-quiz-upload'), - commented out as we are no longer doing csv quiz uploads
 
     # url(r'^api/professors/', professor_list, name='professor-list'),
     # url(r'^api/professors/(?P<pk>[0-9]+)',
@@ -106,6 +113,9 @@ urlpatterns = [
         student_to_course_list, name='student-to-course-detail'),
     url(r'^api/student/course/', student_to_course_list,
         name='student-to-course-list'),
+
+    url(r'^api/student/section/(?P<pk>[0-9]+)', student_to_section_list, name='student-to-section-detail'),
+    url(r'^api/student/section/', student_to_section_list, name='student-to-section-list'),
 
     # url(r'^api/student/quiz/(?P<pk>[0-9]+)',
     #     student_to_quiz_list, name='student-to-quiz-detail'),
@@ -145,7 +155,7 @@ urlpatterns = [
     #     quiz_question_list, name='student-to-quiz-detail'),
     url(r'^api/quiz-questions/(?P<pk>[0-9]+)', quiz_question_list, name='quiz-question-detail'),
     url(r'^api/quiz-questions/', quiz_question_list, name='quiz-question-list'),
-
+    url(r'^api/questionFileUpload/(?P<pk>[0-9]+)', question_file_upload, name="question-file-upload"),
     # Submit Quiz Question
     url(r'^api/quiz-interface/(?P<pk>[0-9]+)', quiz_interface, name='quiz-interface'),
     

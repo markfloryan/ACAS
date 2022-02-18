@@ -3,7 +3,6 @@
     <CourseRosterUpload :courseId="courseId" />
     <ActualAssignmentUpload :courseId="courseId" />
     <AssignmentUpload :courseId="courseId" />
-    <QuizUpload :courseId="courseId" />
     <LoadingLayer v-if="isLoading" :message="'Sending...'"/>
   </div>
 </template>
@@ -16,7 +15,6 @@ import { API_URL } from '@/constants';
 import CourseRosterUpload from '@/components/CourseRosterUpload';
 import AssignmentUpload from '@/components/AssignmentUpload';
 import ActualAssignmentUpload from '@/components/ActualAssignmentUpload';
-import QuizUpload from '@/components/QuizUpload';
 export default {
   name: 'AddStudentsToCourse',
   components: {
@@ -24,7 +22,6 @@ export default {
     CourseRosterUpload,
     AssignmentUpload,
     ActualAssignmentUpload,
-    QuizUpload,
   },
   props: {
     courseId: {

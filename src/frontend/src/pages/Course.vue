@@ -11,8 +11,8 @@
     <!-- Top action buttons-->
     <div class="actions">
       <button
-        class="btn btn-plain edit-btn"
-        style="margin-left: 8pt;"
+        class="btn btn-primary edit-btn"
+        :style="returnPrimaryButtonStyle"
         data-toggle="tooltip"
         data-placement="bottom"
         :title="'Grades Updated: ' + this.grades_updated"
@@ -20,26 +20,43 @@
       >Update grades</button>
       <button
         v-if="isProfessor"
-        class="btn btn-plain edit-btn"
-        style="margin-left: 8pt;"
+        class="btn btn-primary edit-btn"
+        :style="returnPrimaryButtonStyle"
         @click="toEdit()"
       >Edit graph</button>
       <button
-        v-if="isProfessor && context !== 'courseRoster'"
-        class="btn btn-primary edit-btn"
+        v-if="isProfessor"
+        :class="context === 'courseRoster' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'courseRoster' ? true : false"
         :style="returnPrimaryButtonStyle"
         @click="changeContext('courseRoster')"
       >Roster</button>
       <button
-        v-if="isProfessor && context !== 'csvUpload'"
-        class="btn btn-primary edit-btn"
+        v-if="isProfessor"
+        :class="context === 'courseSection' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'courseSection' ? true : false"
+        :style="returnPrimaryButtonStyle"
+        @click="changeContext('courseSection')"
+      >Sections</button>
+      <button
+        v-if="isProfessor"
+        :class="context === 'csvUpload' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'csvUpload' ? true : false"
         :style="returnPrimaryButtonStyle"
         @click="changeContext('csvUpload')"
       >CSV</button>
       <button
+        v-if="isProfessor"
+        :class="context === 'createQuiz' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'createQuiz' ? true : false"
+        :style="returnPrimaryButtonStyle"
+        @click="changeContext('createQuiz')"
+      >Create Quiz</button>
+      <button
         v-if="isProfessor && context !== 'classGraph'"
         class="btn btn-primary edit-btn"
         :style="returnPrimaryButtonStyle"
+        style="float: left"
         @click="changeContext('classGraph')"
       >Back to graph</button>
       <h3
@@ -66,8 +83,18 @@
         :courseId="id"
         @contextChange="changeContext"
       />
+      <CourseSection
+        v-if="context === 'courseSection'"
+        :courseId="id"
+        @contextChange="changeContext"
+      />
       <CSVUpload
         v-if="context === 'csvUpload'"
+        :courseId="id"
+        @contextChange="changeContext"
+      />
+      <CreateQuiz
+        v-if="context === 'createQuiz'"
         :courseId="id"
         @contextChange="changeContext"
       />
@@ -105,6 +132,8 @@ import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
 import CSVUpload from '@/components/CSVUpload';
 import CourseRoster from '@/components/CourseRoster';
+import CourseSection from '@/components/CourseSection';
+import CreateQuiz from '@/components/CreateQuiz';
 import ClassGraph from '@/components/ClassGraph';
 import LoadingLayer from '@/components/LoadingLayer';
 import Sidebar from '@/components/Sidebar';
@@ -116,7 +145,9 @@ export default {
   name: 'Course',
   components: {
     CSVUpload,
+    CreateQuiz,
     CourseRoster,
+    CourseSection,
     ClassGraph,
     LoadingLayer,
     Sidebar,
@@ -298,7 +329,7 @@ export default {
 .dashboard {
   display: grid;
   grid-template-areas:
-    'title title actions'
+    'title actions actions'
     'sidebar content content';
   grid-template-columns: 3fr 3fr 7fr;
   grid-template-rows: min-content 1fr;
@@ -309,6 +340,7 @@ export default {
 }
 .actions {
   grid-area: actions;
+  width: 100%;
 }
 .actions button {
   float: right;

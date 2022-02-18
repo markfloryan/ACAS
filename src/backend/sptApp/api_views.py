@@ -278,6 +278,130 @@ class GradeThresholdViewSet(viewsets.ModelViewSet):
      
 
 '''
+______________________________________________________________________________________________      Section
+    Section: All sections. Contains functionality for viewing, creating, deleting, and editing a section
+______________________________________________________________________________________________
+'''
+
+
+# CRUD for courses.
+class SectionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly) ]
+    renderer_classes = (JSONRenderer, )
+    queryset = Section.objects.all()
+    serializer_class = SectionSerializer
+    model = Section
+
+    '''
+    __________________________________________________  Delete
+     url: DELETE :: <WEBSITE>/api/sections/<SECTION_ID>
+     function: Removes a given Section
+    __________________________________________________
+    '''
+
+    def delete(self, request, format=None, pk=None):
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                result.delete()
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+        return successful_delete_response()
+
+    '''
+    __________________________________________________  get
+     url: GET :: <WEBSITE>/api/sections/ OR
+          GET :: <WEBSITE>/api/sections/<SECTION_ID> OROR
+          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>
+          GET :: <WEBSITE>/api/sections/?courseId=<COURSE_ID>&page=<PAGE_NUM> 
+     function: Retrieves all or a single Section
+    __________________________________________________
+    '''
+
+    def get(self, request, format=None, pk=None):
+        #handle case where user is requesting one specific section
+        if pk is not None:
+            try:
+                section = Section.objects.get(pk=pk)
+                serializer = self.serializer_class(section, many=False)
+
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+            except IndexError:
+                return object_not_found_response()
+        else:
+            page = request.GET.get('page', None)
+            course_id = request.GET.get('courseId', None)
+            
+            if course_id is not None:
+                if page is not None:
+                    page_start, page_end = get_page_indices(page=page, page_size=5)
+                    sections = Section.objects.filter(course=course_id)[page_start:page_end]
+                    serializer = self.serializer_class(sections, many=True)
+                else:
+                    sections = Section.objects.filter(course=course_id)
+                    serializer = self.serializer_class(sections, many=True)
+            else:
+                #otherwise just return all sections
+                sections = self.model.objects.all()
+                serializer = self.serializer_class(sections, many=True)
+
+        return successful_create_response(serializer.data)
+
+    '''
+    __________________________________________________  Post
+     url: POST :: <WEBSITE>/api/sections/
+     function: Creates a given Section
+    __________________________________________________
+    '''
+
+    def post(self, request, format=None, pk=None):
+        params = json.loads(request.body)
+
+        if pk is None:
+            serializer = self.serializer_class(data=params)
+            if not serializer.is_valid():
+                return invalid_serializer_response(serializer.errors)
+
+            serializer.save()
+            return successful_create_response(request.data)
+        else:
+            return colliding_id_response()
+
+    '''
+    __________________________________________________  Put
+     url: PUT :: <WEBSITE>/api/sections/<SECTION_ID>
+     function: Edits a given existing Section
+    __________________________________________________
+    '''
+
+    def put(self, request, format=None, pk=None):
+        if pk is None or request.body is None:
+            return missing_id_response()
+        try:
+            params = json.loads(request.body)
+        except:
+            return missing_id_response()
+
+        try:
+            result = self.model.objects.get(pk=pk)
+        except self.model.DoesNotExist:
+            return object_not_found_response()
+
+        serializer = self.serializer_class(result, data=params)
+
+        if not serializer.is_valid():
+            return invalid_serializer_response(serializer.errors)
+
+        serializer.save()
+        return successful_edit_response(serializer.data)
+
+
+'''
 ______________________________________________________________________________________________      Student
     Student: Student in the course
 ______________________________________________________________________________________________
@@ -307,7 +431,7 @@ class StudentViewSet(viewsets.ModelViewSet):
      url: GET :: <WEBSITE>/api/students/?id_token=
      function: Signs a user in by checking if they exist in the DB
     __________________________________________________
-    '''
+    ''' 
     # If no pk is specified, get the current user. Otherwise, get the user specified by the pk
     def get(self, request, format=None, pk=None):
 
@@ -455,7 +579,7 @@ class SearchViewSet(viewsets.ModelViewSet):
             students = Student.objects.all()  # This will be filtered further below
 
         # Get page start and end
-        page_start, page_end = get_page_indices(request.GET.get('page', None))
+        page_start, page_end = get_page_indices(page=request.GET.get('page', None))
 
         # If we do not pass a courseId, then filter students among all courses
         if courseId == None:
@@ -976,6 +1100,8 @@ class QuizViewSet(viewsets.ModelViewSet):
       url: POST :: <WEBSITE>/api/quizzes/
       function: Creates a new quiz
     '''
+    # TODO figure out how to use pools (Idea is they are a ratio of questions to be asked during a graded quiz time, and used
+    # to weight a random variable during practice time)
     def post(self, request, format=None, pk=None):
         if pk is None:
             data = json.loads(request.body)
@@ -988,14 +1114,10 @@ class QuizViewSet(viewsets.ModelViewSet):
                 if not serializer.is_valid():
                     return invalid_serializer_response(serializer.errors)
                 serializer.save()
-
+                
                 assignment = Assignment.objects.get(pk=quiz["assignment"])
                 newly_created_quiz = Quiz.objects.get(
-                    assignment=assignment,
-                    pool=quiz["pool"],
-                    practice_mode=quiz["practice_mode"],
-                    next_open_date=quiz["next_open_date"],
-                    next_close_date=quiz["next_close_date"]
+                    assignment=assignment
                     )
                 students_in_assignment = StudentToAssignment.objects.filter(
                     assignment=assignment)
@@ -1011,7 +1133,6 @@ class QuizViewSet(viewsets.ModelViewSet):
                             student_to_assignment=student_to_assignment
                         )
                         student_to_quiz.save()
-
             return successful_create_response(request.data)
         else:
             return colliding_id_response()
@@ -1175,6 +1296,39 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
             return successful_edit_response(serializer.data)
 
 
+#Quiz Question uploading feature
+#/api/questionFileUpload/<pk>
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([GoogleOAuth])
+@permission_classes([IsAuthenticated & ( IsProfessor | ReadOnly)])
+def questionFileUpload(request,pk):
+    try:
+        implementation = request.FILES['implementation']
+    except MultiValueDictKeyError:
+        return malformed_request_response(fields={'implementation': "No implementation found in request"})
+    try:
+        harness = request.FILES['harness']
+    except MultiValueDictKeyError:
+        return malformed_request_response(fields={'harness': "No harness found in request"})
+    try:
+        question = QuizQuestion.objects.get(pk=pk)
+    except QuizQuestion.DoesNotExist:
+        return malformed_request_response(fields={
+            'ok':False,
+            'error':'Could not find Quiz Question with primary key {}'.format(pk)
+        })
+    print(implementation)
+    print(harness)
+    implementaion_content_raw = implementation.read().decode('utf-8')
+    harness_content_raw = harness.read().decode('utf-8')
+    print(implementaion_content_raw)
+    print(harness_content_raw)
+
+    #print(csv_content_raw) 
+
+    return successful_create_response(request.data)
+
 
 class QuizInterfaceViewSet(viewsets.ModelViewSet):
     authentication_classes = [GoogleOAuth]
@@ -1240,7 +1394,7 @@ __________________________________________________
             response_data['info'] = "Submitting this question is forbidden"
             return forbidden_response(response_data)
 
-
+        # TODO add new question types to this section
         # Check if the answer was correct
         question_parameters = json.loads(quiz_question.question_parameters)
         question_type = quiz_question.question_type
@@ -1250,14 +1404,16 @@ __________________________________________________
             is_correct = (data['selection'] == question_parameters['answer'])
             submitted_answer = data['selection']
         # Select all question
-        elif question_type == 2:
+        elif question_type == 1:
             submitted_answer = data['all_selections']
             submitted_answer.sort()
             correct_answer = question_parameters['answer']
             correct_answer.sort()
             is_correct = (submitted_answer == correct_answer)
+        # Commented out as we shift away from parsons problems towards free response and coding questions
+        """         
         # Parsons problem
-        elif question_type == 3:
+         elif question_type == 3:
             is_correct = True
             submitted_answer = data['code_order']
             dependencies = question_parameters['answer']
@@ -1293,7 +1449,8 @@ __________________________________________________
                     break
             
             # Set submitted_answer to code order so that the code_order is saved in the StudentToQuizQuestion as the submitted answer
-            submitted_answer = code_order
+            submitted_answer = code_order 
+            """
 
         response_data["correct"] = is_correct
 
@@ -1640,6 +1797,7 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
     __________________________________________________
     '''
 
+    # TODO make this assign students to all assignments in that course
     def post(self, request, format=None, pk=None):
         if pk is None:
             data = request.data
@@ -1722,6 +1880,194 @@ class StudentToCourseViewSet(viewsets.ModelViewSet):
 
             serializer.save()
             return successful_edit_response(serializer.data)
+
+
+'''
+______________________________________________________________________________________________      StudentToSectionViewSet
+StudentToSectionViewSet: This shows the section that a student is in
+______________________________________________________________________________________________
+'''
+
+
+class StudentToSectionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [GoogleOAuth]
+    permission_classes = [IsAuthenticated & ( IsProfessor | ( IsOwner & ReadOnly) )]
+    renderer_classes = (JSONRenderer, )
+    queryset = StudentToSection.objects.all()
+    serializer_class = StudentToSectionSerializer
+    model = StudentToSection
+
+    '''
+    __________________________________________________  Delete
+     url: DELETE :: <WEBSITE>/api/student/section/ OR
+          DELETE :: <WEBSITE>/api/student/section/?sectionId=<SECTION_ID>&studentId=<STUDENT_ID>
+     function: Removes a given student to section relationship
+    __________________________________________________
+    '''
+
+    def delete(self, request, format=None, pk=None):
+        if pk is None:
+            section = request.GET.get('sectionId', None)
+            student = request.GET.get('studentId', None)
+            
+            if section is not None and student is not None:
+                try:
+                    result = self.model.objects.filter(section=section, student=student)
+                    result.delete()
+                except self.model.DoesNotExist:
+                    return object_not_found_response()
+            else:
+                return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                result.delete()
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+        return successful_delete_response()
+
+    '''
+    __________________________________________________  Get
+     url: GET :: <WEBSITE>/api/student/section/ OR
+          GET :: <WEBSITE>/api/student/section/<STUDENT_ID> OR
+          GET :: <WEBSITE>/api/student/section/?sectionId=<SECTION_ID> OR
+          GET :: <WEBSITE>/api/student/section/?studentId=<STUDENT_ID>&courseId=<COURSE_ID> OR
+     function: Retrieves all or a single student section relationship
+     sectionId
+     id_token => student_id
+
+     1) get user id
+     2) get section
+     3) get studentToSection using section and student
+    __________________________________________________
+    '''
+
+    def get(self, request, format=None, pk=None):
+        is_many = True
+        if pk is None:
+
+            section_id = request.GET.get('sectionId', None)
+            if section_id is not None:
+                try:
+                    student = request.user
+                    section = Section.objects.get(pk=section_id)
+                    result = StudentToSection.objects.get(
+                        section=section, student=student)
+                    is_many = False    
+
+                except Section.DoesNotExist:
+                    return object_not_found_response()
+                except Student.DoesNotExist:
+                    return object_not_found_response()
+                except StudentToSection.DoesNotExist:
+                    return object_not_found_response()
+
+            else:
+                student = request.GET.get('studentId', None)
+                course = request.GET.get('courseId', None)
+                if student is not None and course is not None:
+                    sections = Section.objects.filter(course_id=course)
+                    result = self.model.objects.filter(
+                        student=student, section__in=sections
+                    )
+                else:
+
+                    student = request.user
+                    result = self.model.objects.filter(
+                        student=student
+                    )
+                    is_many = True
+
+        else:
+            try:
+                student = Student.objects.get(pk=pk)
+                result = StudentToSection.objects.filter(student=student)
+                is_many = True
+            except Student.DoesNotExist:
+                return object_not_found_response()
+        self.check_object_permissions(self.request, result)
+        serializer = self.serializer_class(result, many=is_many)
+        return successful_create_response(serializer.data)
+
+    '''
+    __________________________________________________  Post
+     url: POST :: <WEBSITE>/api/student/section/
+     function: Creates a given student setion relationship (ie enrolls them in that section)
+    __________________________________________________
+    '''
+
+    def post(self, request, format=None, pk=None):
+        if pk is None:
+            data = request.data
+            section = data["section"]
+            student = data["student"]
+
+            if section is None:
+                malformed_request_response(fields={"section": "This field is required"})
+
+            if student is None:
+                malformed_request_response(fields={"student": "This field is required"})
+
+            # Try to access the foreign key necessary for the model
+            try:
+                section = Section.objects.get(pk=section)
+            except Section.DoesNotExist:
+                return object_not_found_response()
+
+            student_id = data["student"]
+            try:
+                student = Student.objects.get(pk=student)
+            except Student.DoesNotExist:
+                return object_not_found_response()
+        
+            studentToSection = StudentToSection.objects.filter(
+                section=section,
+                student=student
+            )
+
+            if len(studentToSection) > 0:
+                return colliding_id_response()
+
+
+
+            studentToSection = StudentToSection(
+                section=section,
+                student=student
+            )
+            # Save the student to section relationship
+            studentToSection.save()
+
+            return successful_create_response(request.data)
+
+        else:
+            return colliding_id_response()
+
+    '''
+    __________________________________________________  Put
+     url: PUT :: <WEBSITE>/api/student/section/<STUDENT_ID>
+     function: Edits a given student section relationship
+    __________________________________________________
+    '''
+
+    def put(self, request, format=None, pk=None):
+        if pk is None:
+            return missing_id_response()
+        else:
+            try:
+                result = self.model.objects.get(pk=pk)
+                self.check_object_permissions(self.request, result)
+            except self.model.DoesNotExist:
+                return object_not_found_response()
+
+            serializer = self.serializer_class(result, data=request.data)
+
+            if not serializer.is_valid():  # pragma: no cover This serializer is always valid, but serializer requires is_valid to be called to save()
+                return invalid_serializer_response(serializer.errors)
+
+            serializer.save()
+            return successful_edit_response(serializer.data)
+
 
 '''
 studentProgress
@@ -1829,7 +2175,7 @@ class CourseRosterUpload(viewsets.ModelViewSet):
             #make the student object
             student = Student(email=email, first_name=first, last_name=last, username=username, id_token="", is_professor='f')
             students.append(student)
-        
+
         Student.objects.bulk_create(students, ignore_conflicts=True)
 
         #Students are created, let's make the student course pairs
@@ -2417,7 +2763,8 @@ class StudentToAssignmentViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return object_not_found_response()
 
-
+# Commented out as we are shifting to creating quizzes through a frontend builder
+"""
 #Quiz Question uploading feature
 #/api/assignmentQuizUpload/<pk>
 @csrf_exempt
@@ -2439,7 +2786,7 @@ def assignmentQuizUpload(request,pk):
         })
 
     # Define question types
-    question_types = ["0","1","2","3"] # Corresponding to multiple choice, free response, select all that apply, and parsons problems
+    question_types = ["0","1","2","3"] # Corresponding to multiple choice, multiple select, free response, and parsons problems
 
     #estimates show that we don't need to use chunks -- may need to revise this assumption if used for files > ~2.5mb.
     csv_content_raw = csv_file.read().decode('utf-8')
@@ -2455,12 +2802,12 @@ def assignmentQuizUpload(request,pk):
         csv_lines[0]=csv_lines[0].strip('\r')
     header_elements = csv_lines[0].split(',')
     multiple_choice_count = int(header_elements[0])
-    free_response_count = int(header_elements[1])
-    select_all_that_apply_count = int(header_elements[2])
+    multiple_select_count = int(header_elements[1])
+    free_response_count = int(header_elements[2])
     parsons_problem_count = int(header_elements[3])
     question_type_count = dict({"parsons": parsons_problem_count,
                                 "multiple_choice": multiple_choice_count,
-                                "select_all": select_all_that_apply_count,
+                                "multiple_select": mutliple_select_count,
                                 "free_response": free_response_count})
 
     #if the quiz already exists, delete the old one and create this new one.
@@ -2499,8 +2846,8 @@ def assignmentQuizUpload(request,pk):
                 # Strip carriage returns
                 if '\r' in option:
                     option = option.strip("\r")
-                # Check if multiple choice or select_all
-                if question_type == "0" or question_type == "2":
+                # Check if multiple choice or multiple select
+                if question_type == "0" or question_type == "1":
                     answer_pool.append(int(option)) # Add answer to pool as integer
                 else:
                     answer_pool.append(option) # Add answer to pool as string
@@ -2582,3 +2929,4 @@ def assignmentQuizUpload(request,pk):
             'ok': False,
             'errors': errors
         })
+ """

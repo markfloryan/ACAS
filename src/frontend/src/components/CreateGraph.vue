@@ -17,87 +17,87 @@
       class="network"
       :style="canvasStyle"
       ></network>
-      <div class="edit actions">
-        <button v-if="(!uploading) && !inEdit" @click="addEdge()" class="create-btn btn btn-create">New Edge</button>
-        <button v-if="(!uploading) && !inEdit" @click="topicModalIsOpen = true" class="nodeButton btn btn-create">New Node</button>
-        <button v-if="(!uploading) && !inEdit" @click="deleteMode()" class="btn btn-delete">Delete topic node</button>
-        <router-link to="/">
+    <div class="edit actions">
+      <button v-if="(!uploading) && !inEdit" @click="addEdge()" class="create-btn btn btn-create">New Edge</button>
+      <button v-if="(!uploading) && !inEdit" @click="topicModalIsOpen = true" class="nodeButton btn btn-create">New Node</button>
+      <button v-if="(!uploading) && !inEdit" @click="deleteMode()" class="btn btn-delete">Delete topic node</button>
+      <router-link to="/">
         <button v-if="(!uploading) && !inEdit"
           @click="saveEdits()"
           :style="returnPrimaryButtonStyle"
           class="save-btn btn btn-primary"
         >Save</button>
-        </router-link>
-        <!--Only one button is displayed at a time, they both call different functions -->
-    <input type="file" ref="file" style="display: none">
-    <!--
-    <button v-if="!inEdit" @click="overlay()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary a">Upload grades/topics</button>
-    -->
-    <router-link to="/">
-    <button v-if="(!inEdit&&uploading)" @click="overlay()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary a">Home</button>
-    </router-link>
-    <button v-if="inEdit&&!displayError" @click="overlay() & Calling()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary b">Go back to graph editor</button>
-    <button v-if="errorbutton" id="errorbutton" @click="overlay() & displayErrors()" :style="returnPrimaryButtonStyle" class="save-btn btn btn-primary b">Errors</button>
-    <button v-if="inEdit&&displayError" id="errorbutton" @click="overlay() & deleteErrors()" :style="returnPrimaryButtonStyle" class="save-btn btn btn-primary b"> Back to file upload page </button>
+      </router-link>
+      <!--Only one button is displayed at a time, they both call different functions -->
+      <input type="file" ref="file" style="display: none">
+      <!--
+      <button v-if="!inEdit" @click="overlay()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary a">Upload grades/topics</button>
+      -->
+      <router-link to="/">
+        <button v-if="(!inEdit&&uploading)" @click="overlay()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary a">Home</button>
+      </router-link>
+      <button v-if="inEdit&&!displayError" @click="overlay() & Calling()" :style="returnPrimaryButtonStyle" class="overlay-btn btn btn-primary b">Go back to graph editor</button>
+      <button v-if="errorbutton" id="errorbutton" @click="overlay() & displayErrors()" :style="returnPrimaryButtonStyle" class="save-btn btn btn-primary b">Errors</button>
+      <button v-if="inEdit&&displayError" id="errorbutton" @click="overlay() & deleteErrors()" :style="returnPrimaryButtonStyle" class="save-btn btn btn-primary b"> Back to file upload page </button>
 
-    <div id = "overlay">
-      <div style="height: 100%; overflow-y:scroll;">
-        <!-- Description of course format -->
-        <ul v-if='displayError' id = "Errors" style ="margin-bot:20px;">
-          ERRORS: 
-          <li v-for="error in Errors" :key ="error.id">
-            {{error}}
-          </li>
-        </ul>
+      <div id = "overlay">
+        <div style="height: 100%; overflow-y:scroll;">
+          <!-- Description of course format -->
+          <ul v-if='displayError' id = "Errors" style ="margin-bot:20px;">
+            ERRORS: 
+            <li v-for="error in Errors" :key ="error.id">
+              {{error}}
+            </li>
+          </ul>
 
-        <span v-if="!displayError" class = "top">
-          <p>Upload topics for current course</p>
-          <p>each topic is a line: </p>
+          <span v-if="!displayError" class = "top">
+            <p>Upload topics for current course</p>
+            <p>each topic is a line: </p>
+            <img
+              width="400px"
+              src="../assets/topic.png" />
+            <br />
+            <br /> 
+              
+            <!-- button shows upload, allows user to upload file, then sumbmit sends file to file handling function -->
+            <button v-if="!uploadTopicsButton" @click="$refs.file.click() & CallingTopic()" on-submit="handleFileUpload()" :style="returnPrimaryButtonStyle" class="saveTopic-btn btn btn-primary a">Upload topic CSV</button>
+            <button v-if="uploadTopicsButton" id="submitbutton" @click="handleTopicUpload" class="save-btn btn btn-create">Submit topics</button>
+          </span>
+          <!-- button shows upload, allows user to upload file, then sumbmit sends file to file handling function (for grades) -->
+          <span v-if="!displayError" class = "bottom" >
+          <p>Upload grades for current course</p> <!-- TODO: Where is this? -->
+          <p>each student is a line: </p>
           <img
-            width="400px"
-            src="../assets/topic.png" />
-          <br />
-          <br /> 
-            
-          <!-- button shows upload, allows user to upload file, then sumbmit sends file to file handling function -->
-          <button v-if="!uploadTopicsButton" @click="$refs.file.click() & CallingTopic()" on-submit="handleFileUpload()" :style="returnPrimaryButtonStyle" class="saveTopic-btn btn btn-primary a">Upload topic CSV</button>
-          <button v-if="uploadTopicsButton" id="submitbutton" @click="handleTopicUpload" class="save-btn btn btn-create">Submit topics</button>
-        </span>
-        <!-- button shows upload, allows user to upload file, then sumbmit sends file to file handling function (for grades) -->
-        <span v-if="!displayError" class = "bottom" >
-         <p>Upload grades for current course</p> <!-- TODO: Where is this? -->
-        <p>each student is a line: </p>
-         <img
-            width="400px"
-            src="../assets/grade.png" /><br/> <br /> 
-        <button v-if="!uploadGradesButton" @click="$refs.file.click() & CallingGrade()" on-submit="handleFileUpload()" :style="returnPrimaryButtonStyle" class="saveGrades-btn btn btn-primary a">Upload student grades CSV</button>
-        <button v-if="uploadGradesButton" id="submitbutton" @click="handleGradesUpload" class="save-btn btn btn-create">Submit</button>
-        
-        </span>
-      </div>
-  </div> 
-  <EditPopup
-    :isOpen="topicModalIsOpen"
-    :data="selectedNodeData"
-    :edges="edges"
-    :nodes="nodes"
-    :classData= "classData"
-    @onClose="topicModalIsOpen = false" 
-    ref="editPopup" />
+              width="400px"
+              src="../assets/grade.png" /><br/> <br /> 
+          <button v-if="!uploadGradesButton" @click="$refs.file.click() & CallingGrade()" on-submit="handleFileUpload()" :style="returnPrimaryButtonStyle" class="saveGrades-btn btn btn-primary a">Upload student grades CSV</button>
+          <button v-if="uploadGradesButton" id="submitbutton" @click="handleGradesUpload" class="save-btn btn btn-create">Submit</button>
+          
+          </span>
+        </div>
+    </div> 
       <EditPopup
         :isOpen="topicModalIsOpen"
         :data="selectedNodeData"
         :edges="edges"
         :nodes="nodes"
-        :classData="classData"
-        @onClose="topicModalIsOpen = false"
-      />
+        :classData= "classData"
+        @onClose="topicModalIsOpen = false" 
+        ref="editPopup" />
+      <EditPopup
+          :isOpen="topicModalIsOpen"
+          :data="selectedNodeData"
+          :edges="edges"
+          :nodes="nodes"
+          :classData="classData"
+          @onClose="topicModalIsOpen = false"
+        />
       <YouSure
-        :isOpen="confirmModal"
-        :data="selectedNodeData"
-        @closeConfirm="confirmModal = false"
-        @confirm="deleteNode()"
-      />
+          :isOpen="confirmModal"
+          :data="selectedNodeData"
+          @closeConfirm="confirmModal = false"
+          @confirm="deleteNode()"
+        />
     </div>
     <Saved :isSaved="isSaved"/>
     <h2 v-if="currentlyAddingEdge">"Click on a topic and drag arrow to a topic."</h2>
