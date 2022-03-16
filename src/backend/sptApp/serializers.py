@@ -211,6 +211,7 @@ class QuizSerializer(SecureModelSerializer):
             'assignment',
             'pool',
             'practice_mode',
+            'published',
             'next_open_date',
             'next_close_date',
         )
@@ -229,7 +230,7 @@ class StudentToQuizSerializer(SecureModelSerializer):
             'completed_quiz',
         )
 
-class QuizQuestionSerializer(SecureModelSerializer):
+class StudentQuizQuestionSerializer(SecureModelSerializer):
     class Meta:
         model = QuizQuestion
         fields = (
@@ -251,6 +252,17 @@ class QuizQuestionSerializer(SecureModelSerializer):
             ret['question_parameters'] = json.dumps(question_parameters)
         return ret
 
+class ProfessorQuizQuestionSerializer(SecureModelSerializer):
+    class Meta:
+        model = QuizQuestion
+        fields = (
+            'pk',
+            'quiz',
+            'question_type',
+            'answered_correct_count',
+            'answered_total_count',
+            'question_parameters',
+        )
 
 class SettingsSerializer(SecureModelSerializer):
     class Meta:

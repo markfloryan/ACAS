@@ -1078,9 +1078,14 @@ class QuizViewSet(viewsets.ModelViewSet):
             topic_id = request.GET.get('topicId', None)
             if topic_id is not None:
                 try:
-                    topic = Topic.objects.get(pk=topic_id)
-                    result = self.model.objects.get(assignment__topic=topic)
-                    is_many = False
+                    assignments = Assignment.objects.filter(topic=topic_id)
+                    result = []
+                    for assignment in assignments:
+                        try:
+                            quiz = Quiz.objects.get(assignment=assignment)
+                            result.append(quiz)
+                        except Quiz.DoesNotExist:
+                            continue
                 except Quiz.DoesNotExist:
                     return object_not_found_response()
             else:
@@ -1092,6 +1097,7 @@ class QuizViewSet(viewsets.ModelViewSet):
                 is_many = False
             except self.model.DoesNotExist:
                 return object_not_found_response()
+
 
         serializer = self.serializer_class(result, many=is_many)
         return successful_create_response(serializer.data)
@@ -1170,7 +1176,7 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated & ( IsProfessor | ReadOnly)]
     renderer_classes = (JSONRenderer, )
     queryset = QuizQuestion.objects.all()
-    serializer_class = QuizQuestionSerializer
+    serializer_class = StudentQuizQuestionSerializer
     model = QuizQuestion
 
     '''
@@ -1199,6 +1205,8 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     def get(self, request, format=None, pk=None):
         is_many = True
 
+        is_prof = hasattr(request.user,'is_professor') and request.user.is_professor == True
+
         if pk is None:
             quiz_id = request.GET.get('quiz', None)
             if quiz_id is not None:
@@ -1224,8 +1232,10 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
                 is_many = False
             except self.model.DoesNotExist:
                 return object_not_found_response()
-
-        serializer = self.serializer_class(result, many=is_many)
+        if is_prof:
+            serializer = ProfessorQuizQuestionSerializer(result, many=is_many)
+        else:
+            serializer = self.serializer_class(result, many=is_many)
         return successful_create_response(serializer.data)
 
     '''

@@ -17,6 +17,33 @@
             />
           </sui-form-field>
         </div>
+        <div class="table">
+          <sui-table v-if="assignmentToQuiz.length > 0" celled>
+            <sui-table-header>
+              <sui-table-row>
+                <sui-table-header-cell :width="3">Name</sui-table-header-cell>
+                <sui-table-header-cell :width="1">Published</sui-table-header-cell>
+                <sui-table-header-cell :width="2">Actions</sui-table-header-cell>
+              </sui-table-row>
+            </sui-table-header>
+            <sui-table-body>
+              <sui-table-row
+                v-for="pair in assignmentToQuiz" v-bind:key="pair.quiz.pk"
+              >
+                <sui-table-cell>{{ pair.assignment.name }}</sui-table-cell>
+                <sui-table-cell>{{ pair.quiz.Published ? "Published" : "Not Published" }}</sui-table-cell>
+                <sui-table-cell>
+                  <center>
+                    <button v-if="!pair.quiz.published" @click="publish(pair)" class="btn btn-create" type="button">Publish</button>
+                    <button v-if="pair.quiz.published" @click="unpublish(pair)" class="btn btn-delete" type="button">Unpublish</button>
+                    <button @click="editQuiz(pair)" class="btn btn-primary" type="button">Edit</button>
+                    <button @click="deleteQuiz(pair)" class="btn btn-delete" type="button">Delete</button>
+                  </center>
+                </sui-table-cell>
+              </sui-table-row>
+            </sui-table-body>
+          </sui-table>
+        </div>
         <div class="buttons">
           <button
             class="btn btn-primary edit-btn"
@@ -38,7 +65,8 @@
     <EditQuiz
       v-if="updateQuiz"
       :courseId="courseId"
-      :quizId="quizId"
+      :assignmentQuizPair="assignmentQuizPair"
+      @onClose="refresh()"
     />
   </div>
 </template>
@@ -65,6 +93,10 @@ export default {
       quiz: null,
       createQuiz: false,
       updateQuiz: false,
+      assignments: [],
+      quizzes: [],
+      assignmentToQuiz: [],
+      assignmentQuizPair: null,
     };
   },
   mounted() {
@@ -72,8 +104,24 @@ export default {
   },
   watch: {
     topicPK: function() {
+      this.getAssignments();
+    },
+    assignments: function () {
       this.getQuizzes();
-    }
+    },
+    quizzes: function () {
+      this.assignmentToQuiz = [];
+      this.quizzes.forEach(quiz => {
+        this.assignments.forEach(assignment => {
+          if(quiz.assignment == assignment.pk) {
+            this.assignmentToQuiz.push({
+              assignment: assignment,
+              quiz: quiz,
+            });
+          }
+        });
+      });
+    },
   },
   props: {
     courseId: {
@@ -87,6 +135,11 @@ export default {
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
+    refresh() {
+      this.createQuiz = false;
+      this.updateQuiz = false;
+      this.getAssignments();
+    },
     getTopics() {
       axios.get(`${API_URL}/topics/?courseId=${this.courseId}`, 
         { 
@@ -107,6 +160,17 @@ export default {
         
       });
     },
+    getAssignments() {
+      axios.get(`${API_URL}/assignments/?topicId=${this.topicPK}`,
+        { 
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }).then((response) => {
+        this.assignments = response.data.result;
+      });
+    },
     getQuizzes() {
       axios.get(`${API_URL}/quizzes/?topicId=${this.topicPK}`,
         { 
@@ -115,8 +179,100 @@ export default {
             Authorization: `Bearer ${this.profile.id_token}`
           }
         }).then((response) => {
-        console.log(response.data.result);
+        this.quizzes = response.data.result;
       });
+    },
+    editQuiz(pair) {
+      this.assignmentQuizPair = pair;
+      this.updateQuiz = true;
+    },
+    publish(pair) {
+      let now = new Date(Date.now());
+      let quizData = {
+        pk: pair.quiz.pk,
+        assignment: pair.quiz.assignment,
+        published: true,
+        next_open_date: now.toISOString(),
+        next_close_date: now.toISOString(),
+      };
+
+      axios.put(`${API_URL}/quizzes/${pair.quiz.pk}`,
+        quizData,
+        {
+          headers: {
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }
+      ).then((response)=> {
+        if(response.data.status == '200 - OK') {
+          this.openToast();
+          this.setToastInfo({
+            type: 'success',
+            title: 'Successful publish',
+            message: 'Quiz successfully published',
+            duration: 5000,
+          });
+          this.getAssignments();
+        }
+      }).catch((error) => {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Failed to publish',
+          message: 'Quiz failed to publish',
+          duration: 5000,
+        });
+      });
+    },
+    unpublish(pair) {
+      let now = new Date(Date.now());
+      let quizData = {
+        pk: pair.quiz.pk,
+        assignment: pair.quiz.assignment,
+        published: false,
+        next_open_date: now.toISOString(),
+        next_close_date: now.toISOString(),
+      };
+
+      axios.put(`${API_URL}/quizzes/${pair.quiz.pk}`,
+        quizData,
+        {
+          headers: {
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }
+      ).then((response)=> {
+        if(response.data.status == '200 - OK') {
+          this.openToast();
+          this.setToastInfo({
+            type: 'success',
+            title: 'Successful unpublish',
+            message: 'Quiz successfully unpublished',
+            duration: 5000,
+          });
+          this.getAssignments();
+        }
+      }).catch((error) => {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Failed to unpublish',
+          message: 'Quiz failed to unpublish',
+          duration: 5000,
+        });
+      });
+    },
+    deleteQuiz(pair) {
+      axios
+        .delete(`${API_URL}/quizzes/${pair.quiz.pk}`, { headers: { Authorization: `Bearer ${this.profile.id_token}` } })
+        .then(response => {
+          if(response.status == 200)
+            this.$emit('onClose');
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      this.getAssignments();
     },
   }
 };
@@ -129,23 +285,25 @@ export default {
     grid-template-areas:
         'title'
         'content'
+        'table'
         'buttons';
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 8fr 1fr;
+    grid-template-rows: 1 1 1 1;
+    padding: 10pt;
 }
 .title {
     grid-area: title;
-    padding-left: 10pt;
-    padding-right: 10pt;
-}
-.buttons {
-    grid-area: buttons;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 .content {
     grid-area: content;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
+}
+.table {
+    grid-area: table;
+}
+.buttons {
+    grid-area: buttons;
+    padding: 10pt;
 }
 </style>

@@ -234,21 +234,18 @@ export default {
         'content'
         'buttons';
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 8fr 1fr;
+    grid-template-rows: 1 8 1;
 }
 .title {
     grid-area: title;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 .buttons {
     grid-area: buttons;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 .content {
     grid-area: content;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 </style>

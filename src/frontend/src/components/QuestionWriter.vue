@@ -19,22 +19,18 @@
             v-if="questionPK===0 || questionPK===1" 
             :select="questionPK===1" 
             :quiz="quiz" 
-            :question="question"
             @onClose="refreshWriter()" />
           <FreeResponseCreate 
             v-if="questionPK===2" 
             :quiz="quiz" 
-            :question="question"
             @onClose="refreshWriter()" />
           <CodingCreate 
             v-if="questionPK===3" 
             :quiz="quiz" 
-            :question="question"
             @onClose="refreshWriter()" />
           <CodeExecutionCreate 
             v-if="questionPK===4" 
             :quiz="quiz" 
-            :question="question"
             @onClose="refreshWriter()" />
         </div>
     </div>
@@ -71,10 +67,10 @@ export default {
       type: Number,
       required: true,
     },
-    question: {
-      type: Object,
+    fromEdit: {
+      type: Boolean,
       required: false,
-    },
+    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -83,7 +79,11 @@ export default {
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     refreshWriter() {
-      this.questionPK = null;
+      if(this.fromEdit) {
+        this.$emit('onClose');
+      } else {
+        this.questionPK = null;
+      }
     },
   } 
 };

@@ -469,6 +469,7 @@ def quiz_question_jason_default():
         })
 
 class QuizQuestion(models.Model):
+    REQUIRED_FIELDS = ('quiz', 'answered_correct_count', 'answered_total_count', 'question_parameters')
     quiz = models.ForeignKey(Quiz, related_name='question_quiz', on_delete=models.CASCADE, default=None)
 
     QUESTION_TYPES = (

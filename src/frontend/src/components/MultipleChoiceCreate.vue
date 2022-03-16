@@ -6,7 +6,7 @@
     </div>
     <div class="description" v-if="select">
       <h3>Multiple Select</h3>
-      <p>A multiple choice question wtih multiple possible answers. It is possible to add random variables to this type of question. List each correct answer in a space seperated list ('A B C F').</p>
+      <p>A multiple choice question wtih multiple possible answers. It is possible to add random variables to this type of question. List each correct answer in a comma seperated list ('A,B,C,F').</p>
     </div>
     <sui-form class="questionText">
         <sui-form-field>
@@ -108,7 +108,7 @@
     </div>
     <div class="submit">
       <button
-          :v-if="question == null"
+          v-if="question === undefined"
           class="btn btn-primary edit-btn"
           :style="returnPrimaryButtonStyle"
           style="float: right;"
@@ -118,7 +118,7 @@
           @click="writeQuestion()"
       >Add Question</button>
       <button
-          :v-if="question != null"
+          v-if="question !== undefined"
           class="btn btn-primary edit-btn"
           :style="returnPrimaryButtonStyle"
           style="float: right;"
@@ -155,8 +155,14 @@ export default {
     this.variableTypes = [{text: 'Integer Range', value: 0}, {text: 'Decimal Range', value: 1}, {text: 'Discrete Set', value: 2}]; 
     this.updateAnswers();
     this.updateVariables();
-    if(question) {
-      //preload question fields here
+    if(this.question) {
+      console.log(this.question);
+      this.questionText = this.question.question_parameters.question;
+      this.variableTexts = this.question.question_parameters.variables;
+      this.numberOfVariables = this.variableTexts.length;
+      this.answerTexts = this.question.question_parameters.choices;
+      this.numberOfAnswers = this.answerTexts.length;
+      this.correctAnswers = this.question.question_parameters.answer; 
     }
   },
   computed: {
@@ -198,20 +204,6 @@ export default {
     removeAnswer() {
       this.numberOfAnswers -= 1;
       this.updateAnswers();
-    },
-    updateCorrect(n) {
-      if(this.select) {
-        this.answerTexts[n].correct = !this.answerTexts[n].correct;
-      } else {
-        if (this.answerTexts[n].correct) {
-          this.answerTexts[n].correct = false;
-        } else {
-          for(let i = 0; i < this.answerTexts.length; i += 1){
-            this.answerTexts[i].correct = false;
-          }
-          this.answerTexts[n].correct = true;
-        }
-      }
     },
     updateVariables() {
       let newVariables = [];
@@ -307,7 +299,7 @@ export default {
           return false;
         }
 
-        let answerTokens = this.answerTexts[i].text.split(' ');
+        let answerTokens = this.answerTexts[i].text.split(',');
         for(let k = 0; k < answerTokens.length; k += 1) {
           if(answerTokens[k].substring(0,2) == '${' && answerTokens[k].substring(answerTokens[k].length-1) == '}') {
             let potentialVarName = answerTokens[k].substring(2, answerTokens[k].length-1);
@@ -343,7 +335,7 @@ export default {
         return false;
       }
 
-      let answersTokens = this.correctAnswers.split(' ');
+      let answersTokens = this.correctAnswers.split(',');
       if(!this.select && answersTokens.length > 1) {
         this.openToast();
         this.setToastInfo({
@@ -402,7 +394,7 @@ export default {
               question: this.questionText,
               variables: this.variableTexts,
               choices: this.answerTexts,
-              answer: this.select ? this.correctAnswers.split(' ') : this.correctAnswers.substring(0,1)
+              answer: this.select ? this.correctAnswers.split(',') : this.correctAnswers.substring(0,1)
             })
           }]
         };
@@ -465,22 +457,20 @@ export default {
     updateQuestion() {
       if(this.validate()){
         let questionData = {
-          'quiz-questions': [{
-            pk: 'None',
-            quiz: this.quiz,
-            question_type: this.select ? 1 : 0,
-            answered_correct: 0,
-            answered_total: 0,
-            question_parameters: JSON.stringify({
-              question: this.questionText,
-              variables: this.variableTexts,
-              choices: this.answerTexts,
-              answer: this.select ? this.correctAnswers.split(' ') : this.correctAnswers.substring(0,1)
-            })
-          }]
+          pk: this.question.pk,
+          quiz: this.quiz,
+          question_type: this.select ? 1 : 0,
+          answered_correct: 0,
+          answered_total: 0,
+          question_parameters: JSON.stringify({
+            question: this.questionText,
+            variables: this.variableTexts,
+            choices: this.answerTexts,
+            answer: this.select ? this.correctAnswers.split(',') : this.correctAnswers.substring(0,1)
+          })
         };
-        //CHANGE THIS TO BE A PUT CALL
-        axios.post(`${API_URL}/quiz-questions/`,
+
+        axios.put(`${API_URL}/quiz-questions/${this.question.pk}`,
           questionData,
           {
             headers: {
@@ -492,8 +482,8 @@ export default {
             this.openToast();
             this.setToastInfo({
               type: 'success',
-              title: 'Successful Creation',
-              message: 'Question successfully added',
+              title: 'Successful Update',
+              message: 'Question successfully updated',
               duration: 5000,
             });
             this.$emit('onClose');
