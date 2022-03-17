@@ -175,6 +175,17 @@ class Section(models.Model):
 
     section_code = models.CharField(max_length=250)
 
+    FREQUENCY_CHOICES = (
+        (0, 'Once'),
+        (1, 'Daily'),
+        (7, 'Weekly'),
+        (14, 'Biweekly')
+    )
+
+    frequency = models.IntegerField(default=0, choices=FREQUENCY_CHOICES)
+    next_open_date = models.DateTimeField(default=datetime.now) #currently stores it in GMT
+    open_duration = models.IntegerField(default=30)
+
     def __str__(self):
         return "Section " + self.section_code + " - " + self.name + " is part of course " + self.course.__str__()
 

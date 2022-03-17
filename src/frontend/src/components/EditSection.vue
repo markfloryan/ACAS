@@ -1,36 +1,56 @@
 <template>
-  <div class="section-modal" @click.self="closeModal()">
-    <div class="content">
-      <h1 v-if="create" style="border-bottom: solid 0.75pt lightgray; padding-bottom: 8pt;">Create a new section:</h1>
-      <h1 v-if="!create" style="border-bottom: solid 0.75pt lightgray; padding-bottom: 8pt;">Edit this section:</h1>
-      <sui-form @submit.prevent>
+  <div>
+    <h1 v-if="create">Create a new section:</h1>
+    <h1 v-if="!create">Edit this section:</h1>
+    <sui-form @submit.prevent>
+      <sui-form-field>
+        <label>Section name</label>
+        <input v-model="sname" placeholder="Section name" type="text">
+      </sui-form-field>
+      <sui-form-field>
+        <label>Section code</label>
+        <input v-model="scode" placeholder="Section code" type="text">
+      </sui-form-field>
+      <div>
         <sui-form-field>
-          <label>Section name</label>
-          <input v-model="sname" placeholder="Section name" type="text">
+          <label>First Open Date and Time</label>
+          <Datepicker v-model="sdate" type="datetime"></Datepicker>
         </sui-form-field>
         <sui-form-field>
-          <label>Section code</label>
-          <input v-model="scode" placeholder="Section code" type="text">
+          <label>Duration</label>
+          <input v-model="sduration" placeholder="Duration" type="number">
         </sui-form-field>
-        <div style="text-align: center;">
-          <button type="button" @click="closeModal()" style="margin-right: 8pt;" class="btn btn-plain cancel-btn">Cancel</button>
-          <button v-if="create" type="button" @click="createSection()" class="btn btn-create create-btn">Create</button>
-          <button v-if="!create" type="button" @click="updateSection()" class="btn btn-create create-btn">Update</button>
-        </div>
-      </sui-form>
-    </div>
+        <sui-form-field>
+          <label>Frequency</label>
+          <sui-dropdown
+            placeholder="Frequency"
+            :options="frequency"
+            selection
+            search
+            v-model="frequencyPK"
+            />
+        </sui-form-field>
+      </div>
+      <div style="text-align: center;">
+        <button type="button" @click="closeModal()" style="margin: 8pt;"  class="btn btn-plain cancel-btn">Cancel</button>
+        <button v-if="create" type="button" @click="createSection()" style="margin: 8pt;" class="btn btn-create create-btn">Create</button>
+        <button v-if="!create" type="button" @click="updateSection()" style="margin: 8pt;" class="btn btn-create create-btn">Update</button>
+      </div>
+    </sui-form>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { mapGetters, mapState, mapMutations } from 'vuex';
+import Datepicker from 'vue2-datepicker';
+import 'vue2-datepicker/index.css';
 import { API_URL } from '@/constants';
 
 export default {
   name: 'EditSection',
   components: {
-    
+    Datepicker,
   },
   props: {
     prefill: {
@@ -50,13 +70,25 @@ export default {
     return {
       sname: '',
       scode: '',
+      sdate: null,
+      sduration: 30,
+      frequency: [],
+      frequencyPK: null,
     };
   },
   mounted() {
+    console.log('mounting edit');
     if(this.prefill != null) {
       this.sname = this.prefill.name;
       this.scode = this.prefill.section_code;
+      this.sduration = this.prefill.open_duration;
+      this.frequencyPK = this.prefill.frequency;
+      this.sdate = new Date(this.prefill.next_open_date);
     }
+    this.frequency = [{value: 0, text: 'Once'},
+        {value: 1, text: 'Daily'},
+        {value: 7, text: 'Weekly'},
+        {value: 14, text: 'Biweekly'}];
   },
   created() {
     // console.log(this.data);
@@ -75,6 +107,9 @@ export default {
         course: this.course,
         name: this.sname,
         section_code: this.scode,
+        frequency: this.frequencyPK,
+        next_open_date: this.sdate.toISOString(),
+        open_duration: this.sduration,
       };
 
       axios
@@ -100,6 +135,9 @@ export default {
         course: this.course,
         name: this.sname,
         section_code: this.scode,
+        frequency: this.frequencyPK,
+        next_open_date: this.sdate.toISOString(),
+        open_duration: this.sduration,
       };
 
       axios
@@ -123,49 +161,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-  .section-modal {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1000000;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(100, 100, 100, 0.8);
-  }
-  .section-modal > .content {
-    grid-area: content;
-    background-color: #fff;
-    -webkit-box-shadow: 0 0.75pt 1.5pt 0 rgba(34,36,38,.15);
-    box-shadow: 0 0.75pt 1.5pt 0 rgba(34,36,38,.15);
-    border: 0.75pt solid rgba(34,36,38,.15);
-    padding: 8pt;
-    border-radius: 6pt;
-    
-    margin: auto;
-    width: 300pt;
-    min-width: 225pt;
-    height: min-content;
-    position: relative;
-    top: 50%;
-    transform: perspective(0.75pt) translateY(-50%);
-    padding: 18pt;
-  }
-  .section-modal > .content > .title {
-    grid-area: title;
-  }
-  .section-modal > .content > .tab-nav {
-    grid-area: tabnav;
-  }
-  .section-modal > .content > .main {
-    grid-area: main;
-  }
-  .section-modal-button {
-    cursor: pointer;
-    grid-area: exit;
-  }
-  .section-modal-button:hover {
-    color: var(--color-blue);
-  }
-</style>

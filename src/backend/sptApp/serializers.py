@@ -128,6 +128,9 @@ class SectionSerializer(SecureModelSerializer):
             'name',
             'section_code',
             'course',
+            'frequency',
+            'next_open_date',
+            'open_duration',
         )
 
 class CourseSerializer(SecureModelSerializer):
