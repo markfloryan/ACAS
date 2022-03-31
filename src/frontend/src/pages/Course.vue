@@ -46,7 +46,6 @@
         @click="changeContext('csvUpload')"
       >CSV</button>
       <button
-        v-if="isProfessor"
         :class="context === 'quiz' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
         :disabled="context === 'quiz' ? true : false"
         :style="returnPrimaryButtonStyle"

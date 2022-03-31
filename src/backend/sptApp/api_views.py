@@ -1097,7 +1097,7 @@ class QuizViewSet(viewsets.ModelViewSet):
                 is_many = False
             except self.model.DoesNotExist:
                 return object_not_found_response()
-
+                
 
         serializer = self.serializer_class(result, many=is_many)
         return successful_create_response(serializer.data)
@@ -1211,15 +1211,13 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
             quiz_id = request.GET.get('quiz', None)
             if quiz_id is not None:
                 try:
-                    quiz = Quiz.objects.get(pk=quiz_id)
-                    mode = request.GET.get('mode', None)
-                    result = []
-                    # When taking the real quiz, only get submittaable questions
-                    if mode == 'regular':
-                        result = QuizQuestion.get_submittable_questions(request.user, quiz)
-                    # In practice mode, get the whole quiz pool for that quiz
-                    elif mode == 'practice':
+                    if is_prof:
+                        quiz = Quiz.objects.get(pk=quiz_id)
                         result = QuizQuestion.objects.filter(quiz=quiz)
+                    else:
+                        quiz = Quiz.objects.get(pk=quiz_id)
+                        result = QuizQuestion.get_a_submittable_question(request.user, quiz)
+                        is_many = False
                 
                 except QuizQuestion.DoesNotExist:
                     return object_not_found_response()
@@ -1297,7 +1295,7 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
             except self.model.DoesNotExist:
                 return object_not_found_response()
 
-            serializer = self.serializer_class(result, data=request.data)
+            serializer = ProfessorQuizQuestionSerializer(result, data=request.data)
 
             if not serializer.is_valid():
                 return invalid_serializer_response(serializer.errors)

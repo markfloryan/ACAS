@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework.utils.field_mapping import get_nested_relation_kwargs
 from .models import *
 
+import re
+
 """
 A Model Serialzier that allows force excluding fields from serialization
 The standard exclude meta field does not apply to nested fields
@@ -240,19 +242,72 @@ class StudentQuizQuestionSerializer(SecureModelSerializer):
             'pk',
             'quiz',
             'question_type',
-            'answered_correct_count',
-            'answered_total_count',
             'question_parameters',
         )
 
     
     def to_representation(self, instance):
-        """Don't send the question answer from question_parameters"""
         ret = super().to_representation(instance)
         question_parameters= json.loads(ret['question_parameters'])
+
+        """Choose and update variables in question"""
+        for var in question_parameters['variables']:
+            if var['type'] == 2:
+                #discrete
+                val = random.choice(var['range'].split(","))
+                question_parameters['question'] = question_parameters['question'].replace('${' + var['name'] + '}', val)
+
+                for answer in question_parameters['choices']:
+                    answer['text'] = answer['text'].replace('${' + var['name'] + '}', val)
+                continue
+            elif var['type'] == 1:
+                #decimal
+                val = round(random.uniform(int(var['range'].split("-")[0]), int(var['range'].split("-")[1])), 2)
+            else:
+                #integer
+                val = random.randint(int(var['range'].split("-")[0]), int(var['range'].split("-")[1]))
+            
+            question_substrings = question_parameters['question'].split('${')
+            for i in range(1, len(question_substrings)):
+                temp = question_substrings[i][:question_substrings[i].find("}")]
+                question_substrings[i] = '${' + temp.replace(var['name'], str(val)) + question_substrings[i][len(temp):]
+            
+            question_parameters['question'] = ''.join(question_substrings)
+
+            for answer in question_parameters['choices']:
+                answer_substrings = answer['text'].split('${')
+                for i in range(1, len(answer_substrings)):
+                    temp = answer_substrings[i][:answer_substrings[i].find("}")]
+                    answer_substrings[i] = '${' + temp.replace(var['name'], str(val)) + answer_substrings[i][len(temp):]
+                
+                answer['text'] = ''.join(answer_substrings)
+
+        question_substrings = question_parameters['question'].split('${')
+        for i in range(1, len(question_substrings)):
+            temp = question_substrings[i][:question_substrings[i].find("}")]
+            question_substrings[i] = str(eval(temp)) + question_substrings[i][len(temp) + 1:]
+
+        question_parameters['question'] = ''.join(question_substrings)
+
+        for answer in question_parameters['choices']:
+            answer_substrings = answer['text'].split('${')
+            for i in range(1, len(answer_substrings)):
+                temp = answer_substrings[i][:answer_substrings[i].find("}")]
+                answer_substrings[i] = str(eval(temp)) + answer_substrings[i][len(temp) + 1:]
+            
+            answer['text'] = ''.join(answer_substrings)
+
+        random.shuffle(question_parameters['choices'])
+
+        """Don't send variable formulas and ranges to students"""
+        if 'variables' in question_parameters:
+            del question_parameters['variables']
+        
+        """Don't send the question answer from question_parameters"""
         if 'answer' in question_parameters:
             del question_parameters['answer']
-            ret['question_parameters'] = json.dumps(question_parameters)
+
+        ret['question_parameters'] = json.dumps(question_parameters)
         return ret
 
 class ProfessorQuizQuestionSerializer(SecureModelSerializer):

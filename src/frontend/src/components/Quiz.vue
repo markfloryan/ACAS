@@ -1,9 +1,79 @@
 <template>
   <div>
-    <div v-if="createQuiz === false && updateQuiz === false">
-      <div class="quiz">
+    <div v-if="isProfessor">
+      <div v-if="createQuiz === false && updateQuiz === false">
+        <div class="quiz">
+          <div class="title" style="padding:10px">
+            <h3>Create or Update a quiz!</h3>
+          </div>
+          <div class="content">
+            <h4>Select a Topic</h4>
+            <sui-form-field>
+              <sui-dropdown
+              placeholder="Select topic"
+              :options="topics"
+              selection
+              search
+              v-model="topicPK"
+              />
+            </sui-form-field>
+          </div>
+          <div class="table">
+            <sui-table v-if="assignmentToQuiz.length > 0" celled>
+              <sui-table-header>
+                <sui-table-row>
+                  <sui-table-header-cell :width="3">Name</sui-table-header-cell>
+                  <sui-table-header-cell :width="1">Published</sui-table-header-cell>
+                  <sui-table-header-cell :width="2">Actions</sui-table-header-cell>
+                </sui-table-row>
+              </sui-table-header>
+              <sui-table-body>
+                <sui-table-row
+                  v-for="pair in assignmentToQuiz" v-bind:key="pair.quiz.pk"
+                >
+                  <sui-table-cell>{{ pair.assignment.name }}</sui-table-cell>
+                  <sui-table-cell>{{ pair.quiz.published ? "Published" : "Not Published" }}</sui-table-cell>
+                  <sui-table-cell>
+                    <center>
+                      <button v-if="!pair.quiz.published" @click="publish(pair)" class="btn btn-create" type="button">Publish</button>
+                      <button v-if="pair.quiz.published" @click="unpublish(pair)" class="btn btn-delete" type="button">Unpublish</button>
+                      <button @click="editQuiz(pair)" class="btn btn-primary" type="button">Edit</button>
+                      <button @click="deleteQuiz(pair)" class="btn btn-delete" type="button">Delete</button>
+                    </center>
+                  </sui-table-cell>
+                </sui-table-row>
+              </sui-table-body>
+            </sui-table>
+          </div>
+          <div class="buttons">
+            <button
+              class="btn btn-primary edit-btn"
+              :style="returnPrimaryButtonStyle"
+              style="float: right;"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title="Create Quiz"
+              @click="createQuiz = true"
+            >Create a new Quiz</button>
+          </div>
+        </div>
+      </div>
+      <CreateQuiz
+        v-if="createQuiz"
+        :courseId="courseId"
+        :topicId="topicPK"
+      />
+      <EditQuiz
+        v-if="updateQuiz"
+        :courseId="courseId"
+        :assignmentQuizPair="assignmentQuizPair"
+        @onClose="refresh()"
+      />
+    </div>
+    <div v-if="!isProfessor">
+      <div class="quiz" v-if="!takingQuiz">
         <div class="title" style="padding:10px">
-          <h3>Create or Update a quiz!</h3>
+          <h3>Take a quiz!</h3>
         </div>
         <div class="content">
           <h4>Select a Topic</h4>
@@ -22,7 +92,8 @@
             <sui-table-header>
               <sui-table-row>
                 <sui-table-header-cell :width="3">Name</sui-table-header-cell>
-                <sui-table-header-cell :width="1">Published</sui-table-header-cell>
+                <sui-table-header-cell :width="1">Open?</sui-table-header-cell>
+                <sui-table-header-cell :width="1">Current Score</sui-table-header-cell>
                 <sui-table-header-cell :width="2">Actions</sui-table-header-cell>
               </sui-table-row>
             </sui-table-header>
@@ -31,43 +102,38 @@
                 v-for="pair in assignmentToQuiz" v-bind:key="pair.quiz.pk"
               >
                 <sui-table-cell>{{ pair.assignment.name }}</sui-table-cell>
-                <sui-table-cell>{{ pair.quiz.Published ? "Published" : "Not Published" }}</sui-table-cell>
+                <sui-table-cell>{{ pair.quiz.published ? (quizzesOpen ? "Open" : "Closed") : "Unpublished" }}</sui-table-cell>
+                <sui-table-cell>N/A</sui-table-cell>
                 <sui-table-cell>
                   <center>
-                    <button v-if="!pair.quiz.published" @click="publish(pair)" class="btn btn-create" type="button">Publish</button>
-                    <button v-if="pair.quiz.published" @click="unpublish(pair)" class="btn btn-delete" type="button">Unpublish</button>
-                    <button @click="editQuiz(pair)" class="btn btn-primary" type="button">Edit</button>
-                    <button @click="deleteQuiz(pair)" class="btn btn-delete" type="button">Delete</button>
+                    <button 
+                      @click="start(pair, false)" 
+                      :class="(quizzesOpen && pair.quiz.published) ?  'btn btn-create' : 'btn btn-disabled'" 
+                      :disabled="!quizzesOpen" 
+                      type="button"
+                    >Start</button>
+                    <button 
+                      @click="start(pair, true)" 
+                      :class="pair.quiz.published ?  'btn btn-primary' : 'btn btn-disabled'" 
+                      :disabled="!pair.quiz.published"
+                      type="button"
+                    >Practice</button>
                   </center>
                 </sui-table-cell>
               </sui-table-row>
             </sui-table-body>
           </sui-table>
         </div>
-        <div class="buttons">
-          <button
-            class="btn btn-primary edit-btn"
-            :style="returnPrimaryButtonStyle"
-            style="float: right;"
-            data-toggle="tooltip"
-            data-placement="bottom"
-            title="Create Quiz"
-            @click="createQuiz = true"
-          >Create a new Quiz</button>
-        </div>
       </div>
+      <TakeQuiz
+        v-if="takingQuiz"
+        :quiz="quiz"
+        :assignment="assignment"
+        :courseId="courseId"
+        :practice="practice"
+        @onClose="refresh()"
+      />
     </div>
-    <CreateQuiz
-      v-if="createQuiz"
-      :courseId="courseId"
-      :topicId="topicPK"
-    />
-    <EditQuiz
-      v-if="updateQuiz"
-      :courseId="courseId"
-      :assignmentQuizPair="assignmentQuizPair"
-      @onClose="refresh()"
-    />
   </div>
 </template>
 
@@ -77,11 +143,13 @@ import { mapGetters, mapState, mapMutations } from 'vuex';
 import { API_URL } from '@/constants';
 import CreateQuiz from '@/components/CreateQuiz';
 import EditQuiz from '@/components/EditQuiz';
+import TakeQuiz from '@/components/TakeQuiz';
 
 export default {
   components: { 
     CreateQuiz,
-    EditQuiz
+    EditQuiz,
+    TakeQuiz
   },
   /*
   Defines the data used by the component
@@ -91,16 +159,25 @@ export default {
       topics: [],
       topicPK: null,
       quiz: null,
+      assignment: null,
       createQuiz: false,
       updateQuiz: false,
       assignments: [],
       quizzes: [],
       assignmentToQuiz: [],
       assignmentQuizPair: null,
+      isProfessor: false,
+      quizzesOpen: false,
+      takingQuiz: false,
+      practice: true,
     };
   },
   mounted() {
     this.getTopics();
+    this.isProfessor = this.profile.is_professor;
+    if(!this.isProfessor) {
+      this.getSections();
+    }
   },
   watch: {
     topicPK: function() {
@@ -138,7 +215,10 @@ export default {
     refresh() {
       this.createQuiz = false;
       this.updateQuiz = false;
+      this.takingQuiz = false;
+      this.quizzesOpen = false;
       this.getAssignments();
+      this.getSections();
     },
     getTopics() {
       axios.get(`${API_URL}/topics/?courseId=${this.courseId}`, 
@@ -273,6 +353,40 @@ export default {
           console.log(error);
         });
       this.getAssignments();
+    },
+    getSections() {
+      axios.get(`${API_URL}/student/section/?studentId=${this.profile.pk}&courseId=${this.courseId}`, 
+        { 
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }).then((response)=> {
+        var now = new Date(Date.now());
+        response.data.result.forEach(item => {
+          var sectionOpen = new Date(item.section.next_open_date);
+          var sectionClose = new Date(sectionOpen.getTime() + item.section.open_duration * 60000);
+
+          while(now.getTime() > sectionClose.getTime() && item.section.frequency != 0) {
+            var newOpen = new Date(sectionOpen);
+            newOpen.setDate(newOpen.getDate() + item.section.frequency);
+            sectionOpen = newOpen;
+            sectionClose = new Date(sectionOpen.getTime() + item.section.open_duration * 60000);
+          }
+
+          if(now.getTime() > sectionOpen.getTime() && now.getTime() < sectionClose.getTime()) {
+            this.quizzesOpen = true;
+          } 
+        });
+      }).catch(function(){
+        
+      });
+    },
+    start(pair, practice) {
+      this.quiz = pair.quiz;
+      this.assignment = pair.assignment;
+      this.takingQuiz = true;
+      this.practice = practice;
     },
   }
 };

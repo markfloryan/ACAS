@@ -103,7 +103,7 @@ export default {
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     getQuestions() {
-      axios.get(`${API_URL}/quiz-questions/?quiz=${this.assignmentQuizPair.quiz.pk}&mode=practice`, 
+      axios.get(`${API_URL}/quiz-questions/?quiz=${this.assignmentQuizPair.quiz.pk}`, 
         { 
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -181,7 +181,14 @@ export default {
       let now = new Date(Date.now());
       let quizData = {
         pk: this.assignmentQuizPair.quiz.pk,
-        assignment: this.assignmentQuizPair.quiz.assignment,
+        assignment: this.assignmentQuizPair.quiz.assignment,            
+        pool: JSON.stringify({
+          multiple_choice: this.multChoiceNum,
+          multiple_select: this.multSelectNum,
+          free_response: this.freeResponseNum,
+          implementation: this.implementationNum,
+          execution: this.executionNum,
+        }),
         published: false,
         next_open_date: now.toISOString(),
         next_close_date: now.toISOString(),

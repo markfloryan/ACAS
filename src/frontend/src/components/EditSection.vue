@@ -86,9 +86,9 @@ export default {
       this.sdate = new Date(this.prefill.next_open_date);
     }
     this.frequency = [{value: 0, text: 'Once'},
-        {value: 1, text: 'Daily'},
-        {value: 7, text: 'Weekly'},
-        {value: 14, text: 'Biweekly'}];
+      {value: 1, text: 'Daily'},
+      {value: 7, text: 'Weekly'},
+      {value: 14, text: 'Biweekly'}];
   },
   created() {
     // console.log(this.data);

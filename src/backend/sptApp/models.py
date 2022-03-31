@@ -560,7 +560,7 @@ class QuizQuestion(models.Model):
         # Get the pks for the questions of each type
         execution_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
         implementation_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
-        free_response_pks = result.filter(question_type=2).values_list('id', flat=True)
+        free_response_pks = list(result.filter(question_type=2).order_by("id").values_list('id', flat=True))
         multiple_select_pks = list(result.filter(question_type=1).order_by("id").values_list('id', flat=True))
         multiple_choice_pks = list(result.filter(question_type=0).order_by("id").values_list('id', flat=True))
 
@@ -593,6 +593,59 @@ class QuizQuestion(models.Model):
                 result = QuizQuestion.objects.filter(quiz=quiz,student_quizquestion__num_submissions=min_num_submissions)
 
         return result
+
+    def get_a_submittable_question(student, quiz):
+        result = QuizQuestion.objects.filter(quiz=quiz) # Get quiz questions for the quiz
+
+        num_questions_by_type = json.loads(quiz.pool) # How many of each question type are allowed for the quiz
+
+        # Get the pks for the questions of each type
+        execution_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
+        implementation_pks = list(result.filter(question_type=3).order_by("id").values_list('id', flat=True))
+        free_response_pks = list(result.filter(question_type=2).order_by("id").values_list('id', flat=True))
+        multiple_select_pks = list(result.filter(question_type=1).order_by("id").values_list('id', flat=True))
+        multiple_choice_pks = list(result.filter(question_type=0).order_by("id").values_list('id', flat=True))
+
+        # Limit pks to a random sample seeded by the user pk
+        r = random.randrange(0, 100)
+        if r < int(num_questions_by_type['multiple_choice']):
+            quiz_question_pks = multiple_choice_pks
+        elif r < int(num_questions_by_type['multiple_choice']) + int(num_questions_by_type['multiple_select']):
+            quiz_question_pks = multiple_select_pks
+        elif r < int(num_questions_by_type['multiple_choice']) + int(num_questions_by_type['multiple_select']) + int(num_questions_by_type['free_response']):
+            quiz_question_pks = multiple_free_response_pks
+        elif r < int(num_questions_by_type['multiple_choice']) + int(num_questions_by_type['multiple_select']) + int(num_questions_by_type['free_response']) + int(num_questions_by_type['implementation']):
+            quiz_question_pks = multiple_implementation_pks
+        elif r < int(num_questions_by_type['multiple_choice']) + int(num_questions_by_type['multiple_select']) + int(num_questions_by_type['free_response']) + int(num_questions_by_type['implementation']) + int(num_questions_by_type['execution']):
+            quiz_question_pks = multiple_execution_pks
+        else:
+            print("Didn't pick a question type")
+
+        result = QuizQuestion.objects.filter(quiz=quiz,id__in=quiz_question_pks)
+
+        stqq = StudentToQuizQuestion.objects.filter(quiz_question__quiz=quiz, student=student) # Get student answers for the quiz
+        num_submissions = len(stqq)
+        
+        # If the quiz doesn't allow resubmissions, exclude already submitted questions
+        if not quiz.allow_resubmissions:
+            result = result.exclude(id__in=stqq.values_list('quiz_question__id', flat=True))
+        else:
+            min_num_submissions = stqq.aggregate(Min('num_submissions'))['num_submissions__min']
+            # If some questions have not yet been submitted by the user, exclude questions that have been submitted
+            if num_submissions < len(result):
+                result = result.exclude(id__in=stqq.values_list('quiz_question__id', flat=True))
+            # Otherwise, only return the questions with the least number of submissions by the user
+            elif min_num_submissions is not None:
+                result = QuizQuestion.objects.filter(quiz=quiz,student_quizquestion__num_submissions=min_num_submissions)
+
+        if len(result) >= 1:
+            r = random.randint(0, len(result)-1)
+            ret = result[r]
+        else:
+            print("Was not able to find a question")
+
+        return ret
+
 
     def calculate_percent_correct():
         return float(self.answered_correct_count)/self.answered_total_count
