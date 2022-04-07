@@ -103,7 +103,7 @@
               >
                 <sui-table-cell>{{ pair.assignment.name }}</sui-table-cell>
                 <sui-table-cell>{{ pair.quiz.published ? (quizzesOpen ? "Open" : "Closed") : "Unpublished" }}</sui-table-cell>
-                <sui-table-cell>N/A</sui-table-cell>
+                <sui-table-cell>{{ pair.grade != null ? pair.grade : "N/A" }}</sui-table-cell>
                 <sui-table-cell>
                   <center>
                     <button 
@@ -198,6 +198,9 @@ export default {
           }
         });
       });
+      if(!this.isProfessor){
+        this.getScores();
+      }
     },
   },
   props: {
@@ -381,6 +384,23 @@ export default {
       }).catch(function(){
         
       });
+    },
+    getScores() {
+      this.assignmentToQuiz.forEach(pair => {
+        axios.get(`${API_URL}/student/assignment/${this.profile.pk}/${pair.assignment.pk}`, 
+        { 
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${this.profile.id_token}`
+          }
+        }).then((response)=> {
+          console.log(response);
+          pair.grade = response.data.result.grade;
+          console.log(pair);
+        }).catch(function(){
+        
+        });
+      })
     },
     start(pair, practice) {
       this.quiz = pair.quiz;

@@ -1,26 +1,42 @@
 <template>
   <div class="question">
-    <div class="questionText">
-      <h4>{{select ? "Multiple Selection" : "Multiple Choice"}}</h4>
-      <h5>{{question.question_parameters.question}}</h5>
-    </div>
-    <sui-form class="answers">
-      <div v-for="(item, index) in question.question_parameters.choices" :key="index">
-        <div class="ui checkbox" style="padding-top: 6pt">
-          <input type="checkbox" name="answer">
-          <label>{{String.fromCharCode(index + 65)}}) {{item.text}}</label>
-        </div>
+    <div v-if="!submitted">
+      <div class="questionText">
+        <h4>{{select ? "Multiple Selection" : "Multiple Choice"}}</h4>
+        <h5>{{question.question_parameters.question}}</h5>
       </div>
-    </sui-form>
-    <div class="submit">
-      <button
-          class="btn btn-create edit-btn"
-          style="float: right;"
-          data-toggle="tooltip"
-          data-placement="bottom"
-          title="Submit"
-          @click="submitQuestion()"
-      >Submit</button>
+      <sui-form class="answers">
+        <div v-for="(item, index) in question.question_parameters.choices" :key="index">
+          <div class="ui checkbox" style="padding-top: 6pt">
+            <input type="checkbox" name="answer" v-model="selections[index]">
+            <label>{{String.fromCharCode(index + 65)}}) {{item.text}}</label>
+          </div>
+        </div>
+      </sui-form>
+      <div class="submit">
+        <button
+            class="btn btn-create edit-btn"
+            style="float: right;"
+            data-toggle="tooltip"
+            data-placement="bottom"
+            title="Submit"
+            @click="submitQuestion()"
+        >Submit</button>
+      </div>
+    </div>
+    <div v-if="submitted">
+      <center>
+        <h4> {{correct ? "Correct!" : "Incorrect"}} </h4>
+        <h5> {{correct ? (select ? "You selected the correct answers" : "You selected the correct answer") : (select ? "You selected one or more incorrect answers" : "You selected the incorrect answer")}}</h5>
+        <h5 v-if="!practice">Your score is now {{score}}%</h5>
+        <button
+              class="btn btn-create edit-btn"
+              data-toggle="tooltip"
+              data-placement="bottom"
+              title="Next"
+              @click="nextQuestion()"
+          >Next Question</button>
+      </center>
     </div>
   </div>
 </template>
@@ -35,11 +51,33 @@ export default {
   components: { LoadingLayer },
   data() {
     return {
-      studentSelection: null,
+      selections: [],
+      currentSelection: null,
+      submitted: false,
+      correct: false,
+      score: 0,
     };
   },
   mounted() {
-    console.log(this.question);
+    for(let i = 0; i < this.question.question_parameters.choices.length; i += 1) {
+      this.selections.push(false);
+    }
+  },
+  watch: {
+    selections: function (){
+      if(!this.select) {
+        if(this.currentSelection != null){
+          this.selections[this.currentSelection] = false;
+        }
+        for(let i = 0; i < this.selections.length; i += 1) {
+          if(this.selections[i]) {
+            this.currentSelection = i;
+            return;
+          }
+        }
+        this.currentSelection = null;
+      }
+    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -54,26 +92,77 @@ export default {
       type: Number,
       required: true,
     },
+    assignment: {
+      type: Number,
+      required: true,
+    },
     question: {
       type: Object,
-      require: true,
+      required: true,
+    },
+    practice: {
+      type: Boolean,
+      required: true,
     }
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
+    validate() {
+      for(let i = 0; i < this.selections.length; i += 1) {
+        if(this.selections[i]) {
+          return true;
+        }
+      }
+
+      this.openToast();
+      this.setToastInfo({
+        type: 'error',
+        title: 'Error',
+        message: this.select ? 'Select one or more answers' : 'Select an answer',
+        duration: 10000,
+      });
+    },
     submitQuestion() {
-      this.$emit('onSubmit');
-      /*if(this.validate()){
-        //CHANGE ALL OF THIS
-        axios.post(`${API_URL}/quiz-questions/`,
-          questionData,
+      if(this.validate()){
+        let choice = [];
+        for(let i = 0; i < this.selections.length; i += 1) {
+          if(this.selections[i]) {
+            choice.push(this.question.question_parameters.choices[i].label.substring(0,1));
+          }
+        }
+
+        let ret = {};
+        if (!this.select) {
+          ret = {
+            quizPK: this.quiz,
+            assignmentPK: this.assignment,
+            practice_mode: this.practice,
+            selection: choice[0],
+          };
+        } else {
+          ret = {
+            quizPK: this.quiz,
+            assignmentPK: this.assignment,
+            practice_mode: this.practice,
+            all_selections: choice,
+          };
+        }
+
+        axios.post(`${API_URL}/quiz-interface/${this.question.pk}`,
+          ret,
           {
             headers: {
               Authorization: `Bearer ${this.profile.id_token}`
             }
           }
         ).then((response)=> {
-          
+          console.log(response.data.result);
+          this.correct = response.data.result.correct;
+          this.score = (response.data.result.currentQuizGrade*100).toFixed(1);
+          if(this.score > 90) {
+            this.$emit("onComplete")
+            this.submitted = true;
+          }
         }).catch((error) => {
           if (error.response.data.status == '500 - Internal Server Error') {
             this.openToast();
@@ -93,8 +182,11 @@ export default {
             });
           }
         });
-      }*/
+      }
     },
+    nextQuestion(){
+      this.$emit('onSubmit');
+    }
   },
 };
 </script>

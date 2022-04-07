@@ -2,9 +2,6 @@
   <div>
     <div class="title" style="padding:10px">
       <h3>{{assignment.name}}</h3>
-      <div v-if="started && !practice">
-        <p>{{currentScore}}% of the way towards mastery!</p>
-      </div>
     </div>
     <div class="content">
       <div v-if="!started">
@@ -23,8 +20,11 @@
           :select="questions[currentQuestionNumber].question_type === 1"
           :question="questions[currentQuestionNumber]"
           :quiz="quiz.pk"
+          :assignment="assignment.pk"
+          :practice="practice"
           :key="currentQuestionNumber"
           @onSubmit="getNextQuestion()"
+          @onComplete="onCompleted()"
         />
       </div>
       <div v-if="completed">
@@ -67,11 +67,9 @@ export default {
 
   data(){
     return {
-      startTime: null,
       started: false,
       currentQuestionNumber: 0,
       questions: [],
-      currentScore: 0,
       completed: false,
     };
   },
@@ -104,7 +102,6 @@ export default {
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     startQuiz(){
-      this.startTime = new Date(Date.now());
       this.getNextQuestion();
     },
     endQuiz(){
@@ -128,6 +125,9 @@ export default {
       }).catch(function(){
         
       });
+    },
+    onCompleted() {
+      this.completed = true;
     }
   }
 };

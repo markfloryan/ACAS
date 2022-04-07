@@ -1380,17 +1380,19 @@ __________________________________________________
                 except:
                     student_to_assignment = StudentToAssignment.objects.create(student=request.user, assignment=assignment)
                 student_to_quiz = StudentToQuiz.objects.create(quiz=quiz, student=request.user, student_to_assignment=student_to_assignment)
+        
+        # Get quiz question
+        quiz_question = QuizQuestion.objects.get(pk=pk)
 
+        #I'm not sure either of these checks are entirely necessary anymroe
+        """
         # If the quiz is not open, return a message letting the user know
         # For practice mode, allow submissions at any time
         if data['practice_mode']:
             pass
-        elif not quiz.is_open():
+        elif not quiz['published']:
             response_data['info'] = "This quiz is not accepting submissions at this time"
             return forbidden_response(response_data)
-
-        # Get quiz question
-        quiz_question = QuizQuestion.objects.get(pk=pk)
 
         # Return if the user is attemping to submit a question that they are not allowed to submit
         # This code prevents someone from resending the same HTTP Post request with a correct answer and artifically boosting their score
@@ -1401,6 +1403,7 @@ __________________________________________________
         elif quiz_question.pk not in QuizQuestion.get_submittable_questions(request.user, quiz).values_list('id', flat=True):
             response_data['info'] = "Submitting this question is forbidden"
             return forbidden_response(response_data)
+        """
 
         # TODO add new question types to this section
         # Check if the answer was correct
@@ -1418,47 +1421,6 @@ __________________________________________________
             correct_answer = question_parameters['answer']
             correct_answer.sort()
             is_correct = (submitted_answer == correct_answer)
-        # Commented out as we shift away from parsons problems towards free response and coding questions
-        """         
-        # Parsons problem
-         elif question_type == 3:
-            is_correct = True
-            submitted_answer = data['code_order']
-            dependencies = question_parameters['answer']
-            
-            # Get list of lines that are expected to be present
-            # (Prevents partially correct answers)
-            expected_lines_dict = {}
-            expected_lines = []
-            for line in dependencies:
-                for index in line:
-                    if index not in expected_lines_dict:
-                        expected_lines_dict[index] = True
-                        expected_lines.append(index)
-
-            # Checks dependency list and makes sure lines are in correct order
-            previous_lines = {}
-            code_order = []
-            for line in submitted_answer:
-                line_id = line['id']
-                code_order.append(line_id)
-                if line_id < 0:
-                    continue
-                for predecessor in dependencies[line_id]:
-                    if predecessor not in previous_lines:
-                        is_correct = False
-                        break
-                previous_lines[line_id] = True
-
-            # Compare lines submitted to lines expected
-            for line in expected_lines:
-                if line not in previous_lines:
-                    is_correct = False
-                    break
-            
-            # Set submitted_answer to code order so that the code_order is saved in the StudentToQuizQuestion as the submitted answer
-            submitted_answer = code_order 
-            """
 
         response_data["correct"] = is_correct
 
@@ -1474,7 +1436,10 @@ __________________________________________________
 
         # Update grade of associated student_to_assignment
         student_to_assignment.grade = round(new_grade*100)
-        student_to_assignment.save()
+        try:
+            student_to_assignment.save()
+        except Exception as e:
+            print(e)
 
         # Update quiz grade
         response_data["currentQuizGrade"] = new_grade
