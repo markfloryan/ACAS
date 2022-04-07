@@ -2,9 +2,10 @@
     <div>
         <div class="quizCreator" v-if="quiz == null">
             <div class="title" style="padding:10px">
-                <h3>Create quizzes</h3>
+                <h3>Create a quiz!</h3>
             </div> 
             <div class="content">
+              <sui-form>
                 <h4>Select a Topic</h4>
                 <sui-form-field>
                     <sui-dropdown
@@ -26,6 +27,23 @@
                         v-model="assignment"
                     />
                 </sui-form-field>
+                <div v-if="assignment !== null">
+                <h4>Question Pool</h4>
+                <p>Define the ratio of questions as percentages out of 100.</p>
+                <sui-form-field>
+                  <label>Multiple Choice</label>
+                  <input v-model="multChoiceNum" placeholder="Percentage of Multiple Choice Questions" type="text">
+                  <label>Multiple Select</label>
+                  <input v-model="multSelectNum" placeholder="Percentage of Multiple Select Questions" type="text">
+                  <label>Free Response</label>
+                  <input v-model="freeResponseNum" placeholder="Percentage of Free Response Questions" type="text">
+                  <label>Implementation</label>
+                  <input v-model="implementationNum" placeholder="Percentage of Implementation Questions" type="text">
+                  <label>Execution</label>
+                  <input v-model="executionNum" placeholder="Percentage of Execution Questions" type="text">
+                </sui-form-field>
+                </div>
+              </sui-form>
             </div>
             <div class="buttons">
                 <button
@@ -58,19 +76,23 @@ export default {
   */
   data(){
     return {
-      file: '',
-      disableBack: true,
-      disableNext: false,
       topics: [],
       topicPK: null,
       assignments: [],
       assignment: null,
       quiz: null,
+      multChoiceNum: 0,
+      multSelectNum: 0,
+      freeResponseNum: 0,
+      implementationNum: 0,
+      executionNum: 0,
     };
   },
   mounted() {
     this.getTopics();
-    this.quizTypes = [{text: 'Practice', value: 0}, {text: 'Graded', value: 1}];
+    if(this.topicId) {
+      this.topicPK = this.topicId;
+    }
   },
   watch: {
     topicPK: function (){
@@ -81,6 +103,10 @@ export default {
     courseId: {
       type: String,
       required: true,
+    },
+    topicId: {
+      type: Number,
+      required: false,
     }
   },
   computed: {
@@ -90,7 +116,40 @@ export default {
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
     validate() {
-      return this.topicPK != null && this.assignment != null;
+      if(this.topicPK == null) {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Error',
+          message: 'Must select a topic.',
+          duration: 10000,
+        });
+        return false;
+      }
+
+      if(this.assignment == null) {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Error',
+          message: 'Must select an assignment.',
+          duration: 10000,
+        });
+        return false;
+      }
+
+      if(!(this.multChoiceNum != 0 || this.multSelectNum != 0 || this.freeResponseNum != 0 || this.implementationNum != 0 || this.executionNum != 0)) {
+        this.openToast();
+        this.setToastInfo({
+          type: 'error',
+          title: 'Error',
+          message: 'Pool must have one or more types of questions available.',
+          duration: 10000,
+        });
+        return false;
+      }
+
+      return true;
     },
     getAssignments() {
       axios.get(`${API_URL}/assignments/?topicId=${this.topicPK}`, 
@@ -140,6 +199,13 @@ export default {
           quizzes: [{
             pk: 'None',
             assignment: this.assignment,
+            pool: JSON.stringify({
+              multiple_choice: this.multChoiceNum,
+              multiple_select: this.multSelectNum,
+              free_response: this.freeResponseNum,
+              implementation: this.implementationNum,
+              execution: this.executionNum,
+            }),
             next_open_date: now.toISOString(),
             next_close_date: now.toISOString(),
           },]
@@ -181,7 +247,6 @@ export default {
           }
         }).catch((error) => {
           if(error.response.data.status == '400 - Bad Request') {
-            console.log(error.response.data)
             if(error.response.data.missing_data.assignment){
               this.openToast();
               this.setToastInfo({
@@ -201,21 +266,13 @@ export default {
             }
           } else if (error.response.data.status == '500 - Internal Server Error') {
             this.openToast();
-              this.setToastInfo({
-                type: 'error',
-                title: '500 - Internal Server Error',
-                message: `${error}`,
-                duration: 10000,
-              });
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
           }
-        });
-      } else {
-        this.openToast();
-        this.setToastInfo({
-          type: 'error',
-          title: 'Missing Data',
-          message: 'One or more fields are empty',
-          duration: 10000,
         });
       }
     }
@@ -232,21 +289,18 @@ export default {
         'content'
         'buttons';
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 8fr 1fr;
+    grid-template-rows: 1 8 1;
 }
 .title {
     grid-area: title;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 .buttons {
     grid-area: buttons;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 .content {
     grid-area: content;
-    padding-left: 10pt;
-    padding-right: 10pt;
+    padding: 10pt;
 }
 </style>

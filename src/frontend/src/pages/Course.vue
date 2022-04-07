@@ -46,12 +46,11 @@
         @click="changeContext('csvUpload')"
       >CSV</button>
       <button
-        v-if="isProfessor"
-        :class="context === 'createQuiz' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
-        :disabled="context === 'createQuiz' ? true : false"
+        :class="context === 'quiz' ? 'btn btn-disabled edit-btn' : 'btn btn-primary edit-btn'"
+        :disabled="context === 'quiz' ? true : false"
         :style="returnPrimaryButtonStyle"
-        @click="changeContext('createQuiz')"
-      >Create Quiz</button>
+        @click="changeContext('quiz')"
+      >Quizzes</button>
       <button
         v-if="isProfessor && context !== 'classGraph'"
         class="btn btn-primary edit-btn"
@@ -93,8 +92,8 @@
         :courseId="id"
         @contextChange="changeContext"
       />
-      <CreateQuiz
-        v-if="context === 'createQuiz'"
+      <Quiz
+        v-if="context === 'quiz'"
         :courseId="id"
         @contextChange="changeContext"
       />
@@ -133,7 +132,7 @@ import { mapGetters, mapState, mapMutations } from 'vuex';
 import CSVUpload from '@/components/CSVUpload';
 import CourseRoster from '@/components/CourseRoster';
 import CourseSection from '@/components/CourseSection';
-import CreateQuiz from '@/components/CreateQuiz';
+import Quiz from '@/components/Quiz';
 import ClassGraph from '@/components/ClassGraph';
 import LoadingLayer from '@/components/LoadingLayer';
 import Sidebar from '@/components/Sidebar';
@@ -145,7 +144,7 @@ export default {
   name: 'Course',
   components: {
     CSVUpload,
-    CreateQuiz,
+    Quiz,
     CourseRoster,
     CourseSection,
     ClassGraph,

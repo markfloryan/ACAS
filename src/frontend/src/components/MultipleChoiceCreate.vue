@@ -2,11 +2,11 @@
   <div class="question">
     <div class="description" v-if="!select">
       <h3>Multiple Choice</h3>
-      <p>A multiple choice question wtih a single answer. It is possible to add random variables to this type of question.</p>
+      <p>A multiple choice question with a single answer. It is possible to add random variables to this type of question.</p>
     </div>
     <div class="description" v-if="select">
       <h3>Multiple Select</h3>
-      <p>A multiple choice question wtih multiple possible answers. It is possible to add random variables to this type of question. List each correct answer in a space seperated list ('A B C F').</p>
+      <p>A multiple choice question wtih multiple possible answers. It is possible to add random variables to this type of question. List each correct answer in a comma seperated list ('A,B,C,F').</p>
     </div>
     <sui-form class="questionText">
         <sui-form-field>
@@ -16,7 +16,7 @@
     </sui-form>
     <sui-form class="variables">
       <h3>Variables</h3>
-      <p>Add variables to questions and answers with the syntax ${var_name}. Variables can have three types - Integer Range, Decimal Range, and Discrete Set. </p> 
+      <p>Add variables to questions and answers with the syntax ${var_name}. Variables can have three types - Integer Range, Decimal Range, and Discrete Set. Basic operations are available to use with numeric variables. For example, one can input a function like ${(a+b*c)/d}.</p> 
       <ul>
         <li>Integer Range - Inputted as "x-y", where x and y are integers, this range will only select integer values between the bounds x and y, inclusive.</li>
         <li>Decimal Range - Inputted as "x-y", where x and y are real numbers, this range will select decimal values up to the hundredths place between the bounds x and y, inclusive.</li>
@@ -47,8 +47,8 @@
       <center>
         <button
             :class="numberOfVariables <= 0 ? 'btn btn-disabled' : 'btn btn-primary edit-btn'"
-                    :disabled="numberOfVariables <= 0 ? true : false"
-                    :style="numberOfVariables <= 0 ? '' : returnPrimaryButtonStyle"
+            :disabled="numberOfVariables <= 0 ? true : false"
+            :style="numberOfVariables <= 0 ? '' : returnPrimaryButtonStyle"
             data-toggle="tooltip"
             data-placement="bottom"
             title="RemoveVariable"
@@ -56,8 +56,8 @@
         >Remove Variable</button>
         <button
             :class="numberOfVariables >= 10 ? 'btn btn-disabled' : 'btn btn-primary edit-btn'"
-                    :disabled="numberOfVariables >= 10 ? true : false"
-                    :style="numberOfVariables >= 10 ? '' : returnPrimaryButtonStyle"
+            :disabled="numberOfVariables >= 10 ? true : false"
+            :style="numberOfVariables >= 10 ? '' : returnPrimaryButtonStyle"
             data-toggle="tooltip"
             data-placement="bottom"
             title="AddVariable"
@@ -108,6 +108,7 @@
     </div>
     <div class="submit">
       <button
+          v-if="question === undefined"
           class="btn btn-primary edit-btn"
           :style="returnPrimaryButtonStyle"
           style="float: right;"
@@ -116,6 +117,16 @@
           title="Add"
           @click="writeQuestion()"
       >Add Question</button>
+      <button
+          v-if="question !== undefined"
+          class="btn btn-primary edit-btn"
+          :style="returnPrimaryButtonStyle"
+          style="float: right;"
+          data-toggle="tooltip"
+          data-placement="bottom"
+          title="Add"
+          @click="updateQuestion()"
+      >Update Question</button>
     </div>
   </div>
 </template>
@@ -144,6 +155,15 @@ export default {
     this.variableTypes = [{text: 'Integer Range', value: 0}, {text: 'Decimal Range', value: 1}, {text: 'Discrete Set', value: 2}]; 
     this.updateAnswers();
     this.updateVariables();
+    if(this.question) {
+      console.log(this.question);
+      this.questionText = this.question.question_parameters.question;
+      this.variableTexts = this.question.question_parameters.variables;
+      this.numberOfVariables = this.variableTexts.length;
+      this.answerTexts = this.question.question_parameters.choices;
+      this.numberOfAnswers = this.answerTexts.length;
+      this.correctAnswers = this.question.question_parameters.answer; 
+    }
   },
   computed: {
     ...mapState('auth', ['profile']),
@@ -158,6 +178,10 @@ export default {
       type: Number,
       required: true,
     },
+    question: {
+      type: Object,
+      require: false,
+    }
   },
   methods: {
     ...mapMutations('toast', ['openToast', 'setToastInfo']),
@@ -180,20 +204,6 @@ export default {
     removeAnswer() {
       this.numberOfAnswers -= 1;
       this.updateAnswers();
-    },
-    updateCorrect(n) {
-      if(this.select) {
-        this.answerTexts[n].correct = !this.answerTexts[n].correct;
-      } else {
-        if (this.answerTexts[n].correct) {
-          this.answerTexts[n].correct = false;
-        } else {
-          for(let i = 0; i < this.answerTexts.length; i += 1){
-            this.answerTexts[i].correct = false;
-          }
-          this.answerTexts[n].correct = true;
-        }
-      }
     },
     updateVariables() {
       let newVariables = [];
@@ -256,23 +266,29 @@ export default {
       let questionTokens = this.questionText.split(' ');
       for(let i = 0; i < questionTokens.length; i += 1) {
         if(questionTokens[i].substring(0,2) == '${' && questionTokens[i].substring(questionTokens[i].length-1) == '}') {
-          let potentialVarName = questionTokens[i].substring(2, questionTokens[i].length-1);
-          let valid = false;
-          for(let j = 0; j < this.variableTexts.length; j += 1) {
-            if (this.variableTexts[j].name == potentialVarName) {
-              valid = true;
-              break;
+          let potentialVarString = questionTokens[i].substring(2, questionTokens[i].length-1);
+          let validChars = '()+*/-';
+          for(let k = 0; k < potentialVarString.length; k += 1){
+            let valid = false;
+            let potentialVarName = potentialVarString[k];
+            if(!validChars.includes(potentialVarName) || !isNaN(potentialVarName)){
+              for(let j = 0; j < this.variableTexts.length; j += 1) {
+                if (this.variableTexts[j].name == potentialVarName) {
+                  valid = true;
+                  break;
+                }
+              }
+              if (!valid) {
+                this.openToast();
+                this.setToastInfo({
+                  type: 'error',
+                  title: 'Error',
+                  message: 'No variable named \'' + potentialVarName + '\' as used in the question text.',
+                  duration: 10000,
+                });
+                return false;
+              }
             }
-          }
-          if (!valid) {
-            this.openToast();
-            this.setToastInfo({
-              type: 'error',
-              title: 'Error',
-              message: 'No variable named \'' + potentialVarName + '\' as used in the question text.',
-              duration: 10000,
-            });
-            return false;
           }
         }
       }
@@ -289,26 +305,32 @@ export default {
           return false;
         }
 
-        let answerTokens = this.answerTexts[i].text.split(' ');
+        let answerTokens = this.answerTexts[i].text.split(',');
         for(let k = 0; k < answerTokens.length; k += 1) {
-          if(answerTokens[k].substring(0,2) == '${' && answerTokens[k].substring(answerTokens[k].length-1) == '}') {
-            let potentialVarName = answerTokens[k].substring(2, answerTokens[k].length-1);
-            let valid = false;
-            for(let j = 0; j < this.variableTexts.length; j += 1) {
-              if (this.variableTexts[j].name == potentialVarName) {
-                valid = true;
-                break;
+          if(questionTokens[i].substring(0,2) == '${' && questionTokens[i].substring(questionTokens[i].length-1) == '}') {
+            let potentialVarString = questionTokens[i].substring(2, questionTokens[i].length-1);
+            let validChars = '()+*/-';
+            for(let k = 0; k < potentialVarString.length; k += 1){
+              let valid = false;
+              let potentialVarName = potentialVarString[k];
+              if(!validChars.includes(potentialVarName) || !isNaN(potentialVarName)){
+                for(let j = 0; j < this.variableTexts.length; j += 1) {
+                  if (this.variableTexts[j].name == potentialVarName) {
+                    valid = true;
+                    break;
+                  }
+                }
+                if (!valid) {
+                  this.openToast();
+                  this.setToastInfo({
+                    type: 'error',
+                    title: 'Error',
+                    message: 'No variable named \'' + potentialVarName + '\' as used in the question text.',
+                    duration: 10000,
+                  });
+                  return false;
+                }
               }
-            }
-            if (!valid) {
-              this.openToast();
-              this.setToastInfo({
-                type: 'error',
-                title: 'Error',
-                message: 'No variable named \'' + potentialVarName + '\'. This is used in answer \'' + this.answerTexts[i].label + '\'',
-                duration: 10000,
-              });
-              return false;
             }
           }
         }
@@ -325,7 +347,7 @@ export default {
         return false;
       }
 
-      let answersTokens = this.correctAnswers.split(' ');
+      let answersTokens = this.correctAnswers.toString().split(',');
       if(!this.select && answersTokens.length > 1) {
         this.openToast();
         this.setToastInfo({
@@ -384,11 +406,10 @@ export default {
               question: this.questionText,
               variables: this.variableTexts,
               choices: this.answerTexts,
-              answer: this.select ? this.correctAnswers.split(' ') : this.correctAnswers.substring(0,1)
+              answer: this.select ? this.correctAnswers.toString().split(',') : this.correctAnswers.toString().substring(0,1)
             })
           }]
         };
-        console.log(questionData);
         axios.post(`${API_URL}/quiz-questions/`,
           questionData,
           {
@@ -416,8 +437,104 @@ export default {
               duration: 10000,
             });
           }
-        }).catch(function(){
-          console.log('Question writing failure');
+        }).catch((error) => {
+          if(error.response.data.status == '400 - Bad Request') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Missing Data',
+              message: `${error.response.data.missing_data}`,
+              duration: 10000,
+            });
+          } else if (error.response.data.status == '500 - Internal Server Error') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          } else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Quiz Question Creation Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          }
+        });
+      }
+    },
+    updateQuestion() {
+      if(this.validate()){
+        let questionData = {
+          pk: this.question.pk,
+          quiz: this.quiz,
+          question_type: this.select ? 1 : 0,
+          answered_correct: 0,
+          answered_total: 0,
+          question_parameters: JSON.stringify({
+            question: this.questionText,
+            variables: this.variableTexts,
+            choices: this.answerTexts,
+            answer: this.select ? this.correctAnswers.toString().split(',') : this.correctAnswers.toString().substring(0,1)
+          })
+        };
+
+        axios.put(`${API_URL}/quiz-questions/${this.question.pk}`,
+          questionData,
+          {
+            headers: {
+              Authorization: `Bearer ${this.profile.id_token}`
+            }
+          }
+        ).then((response)=> {
+          if(response.data.status == '200 - OK') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'success',
+              title: 'Successful Update',
+              message: 'Question successfully updated',
+              duration: 5000,
+            });
+            this.$emit('onClose');
+          }
+          else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Creation Error',
+              message: `${response.data.errors}`,
+              duration: 10000,
+            });
+          }
+        }).catch((error) => {
+          if(error.response.data.status == '400 - Bad Request') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Missing Data',
+              message: `${error.response.data.missing_data}`,
+              duration: 10000,
+            });
+          } else if (error.response.data.status == '500 - Internal Server Error') {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: '500 - Internal Server Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          } else {
+            this.openToast();
+            this.setToastInfo({
+              type: 'error',
+              title: 'Quiz Question Creation Error',
+              message: `${error}`,
+              duration: 10000,
+            });
+          }
         });
       }
     }

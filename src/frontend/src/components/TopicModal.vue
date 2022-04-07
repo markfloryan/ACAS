@@ -16,7 +16,7 @@
             class="link"
             @click="context = 'take_quiz'"
             :style="{ color: context === 'take_quiz' ? 'var(--color-green-40)' : 'var(--color-green-50)'}"
-          >Quiz</span>         
+          >Quizzes</span>   
           <!--
           <span
             v-if="role === 'professor'"

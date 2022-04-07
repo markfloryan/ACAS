@@ -90,6 +90,7 @@
     "vue-router": "^3.0.1",
     "vue-style-loader": "^3.0.1",
     "vue-template-compiler": "^2.5.2",
+    "vue2-datepicker": "^3.10.4",
     "vue2vis": "0.0.15",
     "vuedraggable": "^2.23.2",
     "vuex": "^3.0.1",
